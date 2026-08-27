@@ -102,6 +102,19 @@ fn read_file_sync(p: &Path, force: bool) -> Result<ReadResult, String> {
     }
 }
 
+#[tauri::command]
+pub async fn fs_read_binary(
+    path: String,
+    workspace: Option<WorkspaceEnv>,
+) -> Result<Vec<u8>, String> {
+    let workspace = WorkspaceEnv::from_option(workspace);
+    let target = resolve_path(&path, &workspace);
+    let meta = fs::metadata(&target).map_err(|e| e.to_string())?;
+    if meta.len() > FORCE_MAX_READ_BYTES {
+        return Err(format!("file exceeds {} MB", FORCE_MAX_READ_BYTES / 1024 / 1024));
+    }
+    fs::read(&target).map_err(|e| e.to_string())
+}
 #[derive(Serialize, Clone)]
 struct FileWrittenEvent {
     path: String,

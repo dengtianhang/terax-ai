@@ -16,4 +16,9 @@ describe("MarkdownPreviewPane Streamdown configuration", () => {
   it("does not run streaming incomplete-markdown repair for files", () => {
     expect(streamdownJsx).toMatch(/parseIncompleteMarkdown=\{false\}/);
   });
+
+  it("preserves generated blob URLs for local images", () => {
+    expect(src).not.toContain("defaultRehypePlugins.sanitize");
+  });
+
 });

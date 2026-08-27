@@ -2,6 +2,7 @@ import { endpointIdFromCompatModel } from "@/modules/ai/config";
 import { getCustomEndpointKey, getKey } from "@/modules/ai/lib/keyring";
 import { lspFormatDocument, useLspExtension } from "@/modules/lsp";
 import { usePreferencesStore } from "@/modules/settings/preferences";
+import { currentWorkspaceEnv } from "@/modules/workspace";
 import { onKeysChanged } from "@/modules/settings/store";
 import { acceptCompletion, startCompletion } from "@codemirror/autocomplete";
 import { redo, undo } from "@codemirror/commands";
@@ -16,7 +17,7 @@ import {
 import { Prec } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { vim } from "@replit/codemirror-vim";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
   forwardRef,
@@ -125,7 +126,40 @@ export const EditorPane = memo(
     );
     const languageRef = useRef<string | null>(null);
     const [langId, setLangId] = useState<string | null>(null);
+    const [mediaUrl, setMediaUrl] = useState<string | null>(null);
     const apiKeyRef = useRef<string | null>(null);
+    useEffect(() => {
+      if (doc.status !== "binary") {
+        setMediaUrl(null);
+        return;
+      }
+      const ext = path.split(".").pop()?.toLowerCase() ?? "";
+      const mime = {
+        png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+        webp: "image/webp", svg: "image/svg+xml", ico: "image/x-icon",
+        mp4: "video/mp4", webm: "video/webm", ogg: "video/ogg", mov: "video/quicktime",
+        mp3: "audio/mpeg", wav: "audio/wav", flac: "audio/flac", aac: "audio/aac", m4a: "audio/mp4",
+        pdf: "application/pdf",
+      }[ext];
+      if (!mime) {
+        setMediaUrl(null);
+        return;
+      }
+      let objectUrl: string | null = null;
+      let cancelled = false;
+      void invoke<number[]>("fs_read_binary", {
+        path,
+        workspace: currentWorkspaceEnv(),
+      }).then((bytes) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: mime }));
+        setMediaUrl(objectUrl);
+      }).catch(() => setMediaUrl(null));
+      return () => {
+        cancelled = true;
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+      };
+    }, [doc.status, path]);
 
     useEffect(() => {
       let cancelled = false;
@@ -578,12 +612,12 @@ export const EditorPane = memo(
       const isPdf = ext === "pdf";
 
       if (isImage || isVideo || isAudio || isPdf) {
-        const assetUrl = convertFileSrc(path);
+        const assetUrl = mediaUrl;
         return (
           <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background p-4 overflow-auto">
             {isImage && (
               <img
-                src={assetUrl}
+                src={assetUrl ?? undefined}
                 loading="lazy"
                 decoding="async"
                 className="max-w-full max-h-full object-contain rounded-md border border-border shadow-sm"
@@ -601,7 +635,7 @@ export const EditorPane = memo(
                 controls
                 preload="metadata"
                 className="max-w-full max-h-full"
-                src={assetUrl}
+                src={assetUrl ?? undefined}
               />
             )}
             {isAudio && (
@@ -610,12 +644,12 @@ export const EditorPane = memo(
                 controls
                 preload="metadata"
                 className="w-full max-w-md"
-                src={assetUrl}
+                src={assetUrl ?? undefined}
               />
             )}
             {isPdf && (
               <iframe
-                src={assetUrl}
+                src={assetUrl ?? undefined}
                 className="w-full h-full border-none"
                 title={path.split("/").pop()}
               />
