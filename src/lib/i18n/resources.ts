@@ -31,6 +31,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     "common.loading": "加载中...",
     "common.raw": "原始",
     "common.rendered": "预览",
+    "header.settings": "设置",
+    "header.toggleSidebar": "切换侧边栏",
+    "header.commandPalette": "命令面板",
+    "sidebar.files": "文件",
+    "sidebar.git": "Git",
   },
   "en-US": {
     "settings.general": "General",
@@ -56,5 +61,10 @@ export const messages: Record<Locale, Record<string, string>> = {
     "common.loading": "Loading...",
     "common.raw": "Raw",
     "common.rendered": "Rendered",
+    "header.settings": "Settings",
+    "header.toggleSidebar": "Toggle sidebar",
+    "header.commandPalette": "Command palette",
+    "sidebar.files": "Files",
+    "sidebar.git": "Git",
   },
 };

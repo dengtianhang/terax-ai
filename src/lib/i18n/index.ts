@@ -25,7 +25,12 @@ export type MessageKey =
   | "workspace.noDirectory"
   | "common.loading"
   | "common.raw"
-  | "common.rendered";
+  | "common.rendered"
+  | "header.settings"
+  | "header.toggleSidebar"
+  | "header.commandPalette"
+  | "sidebar.files"
+  | "sidebar.git";
 
 export function isLocale(value: unknown): value is Locale {
   return value === "zh-CN" || value === "en-US";

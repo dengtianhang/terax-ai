@@ -13,6 +13,7 @@ import { LspStatusPill } from "@/modules/lsp";
 import type { WorkspaceEnv } from "@/modules/workspace";
 import { IncognitoIcon } from "@hugeicons/core-free-icons";
 import { Folder01Icon } from "@hugeicons/core-free-icons";
+import { useI18n } from "@/lib/i18n";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CwdBreadcrumb } from "./CwdBreadcrumb";
 import { DiagnosticsBadge } from "./DiagnosticsBadge";
@@ -46,6 +47,7 @@ export function StatusBar({
   privateActive,
 }: Props) {
   const panelOpen = useChatStore((s) => s.panelOpen);
+  const { t } = useI18n();
 
   return (
     <footer className="flex h-8 shrink-0 items-center justify-between gap-3 pl-3 pr-4 text-[11px]">
@@ -53,12 +55,12 @@ export function StatusBar({
         <WorkspaceEnvSelector onSelect={onWorkspaceChange} />
         <button
           type="button"
-          title="选择工作目录"
+          title={t("workspace.selectDirectory")}
           onClick={onChooseDirectory}
           className="flex h-6 shrink-0 items-center gap-1 rounded-sm px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <HugeiconsIcon icon={Folder01Icon} size={13} strokeWidth={1.75} />
-          <span className="hidden sm:inline">选择目录</span>
+          <span className="hidden sm:inline">{t("workspace.selectDirectory")}</span>
         </button>
         <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
         <LspStatusPill filePath={filePath ?? null} />

@@ -25,6 +25,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 import { segmentsFromCwd } from "./lib/pathUtils";
+import { useI18n } from "@/lib/i18n";
 
 type Props = {
   cwd: string | null;
@@ -45,6 +46,7 @@ function basename(path: string): string {
 }
 
 export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
+  const { t } = useI18n();
   // File mode: dir segments navigate; filename is the terminal leaf.
   if (filePath) {
     const dir = dirname(filePath);
@@ -84,7 +86,7 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
 
   if (!cwd) {
     return (
-      <span className="text-xs text-muted-foreground/70">no directory</span>
+      <span className="text-xs text-muted-foreground/70">{t("workspace.noDirectory")}</span>
     );
   }
 
