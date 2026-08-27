@@ -252,6 +252,24 @@ export default function App() {
     [switchWorkspace, activeSpaceId],
   );
 
+  const handleChooseDirectory = useCallback(async () => {
+    const selected = await invoke<string | null>("fs_pick_directory");
+    if (!selected) return;
+    const dirty = tabsRef.current.some((t) => t.kind === "editor" && t.dirty);
+    if (dirty) {
+      window.alert("Save or close unsaved editor tabs before switching directory.");
+      return;
+    }
+    clearWorkspaceState();
+    try {
+      await native.workspaceAuthorize(selected);
+    } catch (error) {
+      window.alert(String(error));
+      return;
+    }
+    resetWorkspace(selected);
+  }, [clearWorkspaceState, resetWorkspace]);
+
   useSpacesBoot({
     ready: launchCwdResolved,
     launchCwd,
@@ -1515,6 +1533,7 @@ export default function App() {
               home={home}
               onCd={sendCd}
               onWorkspaceChange={handleWorkspaceChange}
+              onChooseDirectory={handleChooseDirectory}
               onOpenMini={openMini}
               onOpenAi={togglePanelAndFocus}
               hasComposer={hasComposer}

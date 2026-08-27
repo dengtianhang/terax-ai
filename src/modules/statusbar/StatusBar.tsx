@@ -12,6 +12,7 @@ import {
 import { LspStatusPill } from "@/modules/lsp";
 import type { WorkspaceEnv } from "@/modules/workspace";
 import { IncognitoIcon } from "@hugeicons/core-free-icons";
+import { Folder01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CwdBreadcrumb } from "./CwdBreadcrumb";
 import { DiagnosticsBadge } from "./DiagnosticsBadge";
@@ -23,6 +24,7 @@ type Props = {
   home: string | null;
   onCd: (path: string) => void;
   onWorkspaceChange: (env: WorkspaceEnv) => void;
+  onChooseDirectory: () => void;
   onOpenMini: () => void;
   /** Opens the panel, or Settings > Models when no API key is loaded. */
   onOpenAi: () => void;
@@ -37,6 +39,7 @@ export function StatusBar({
   home,
   onCd,
   onWorkspaceChange,
+  onChooseDirectory,
   onOpenMini,
   onOpenAi,
   hasComposer,
@@ -49,6 +52,15 @@ export function StatusBar({
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <WorkspaceEnvSelector onSelect={onWorkspaceChange} />
         <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
+        <button
+          type="button"
+          title="选择工作目录"
+          onClick={onChooseDirectory}
+          className="flex h-6 shrink-0 items-center gap-1 rounded-sm px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          <HugeiconsIcon icon={Folder01Icon} size={13} strokeWidth={1.75} />
+          <span className="hidden sm:inline">选择目录</span>
+        </button>
         <LspStatusPill filePath={filePath ?? null} />
         <DiagnosticsBadge filePath={filePath ?? null} />
         {privateActive ? (

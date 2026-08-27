@@ -6,6 +6,7 @@ use modules::{
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::async_runtime::spawn_blocking;
 #[cfg(target_os = "macos")]
 use tauri::{PhysicalPosition, WindowEvent};
 use tauri_plugin_window_state::StateFlags;
@@ -26,6 +27,16 @@ fn get_launch_dir(state: State<'_, LaunchDir>) -> Option<String> {
 #[tauri::command]
 fn get_launch_files(state: State<'_, LaunchFiles>) -> Vec<String> {
     std::mem::take(&mut *state.0.lock().expect("LaunchFiles mutex poisoned"))
+}
+
+#[tauri::command]
+async fn fs_pick_directory() -> Result<Option<String>, String> {
+    let selected = spawn_blocking(|| rfd::FileDialog::new().set_title("选择工作目录").pick_folder())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(selected
+        .and_then(|path| std::fs::canonicalize(path).ok())
+        .map(|path| fs::to_canon(&path)))
 }
 
 enum LaunchEntry {
@@ -258,6 +269,7 @@ pub fn run() {
             fs::tree::fs_read_dir,
             fs::file::fs_read_file,
             fs::file::fs_read_binary,
+            fs_pick_directory,
             fs::file::fs_write_file,
             fs::file::fs_stat,
             fs::file::fs_canonicalize,

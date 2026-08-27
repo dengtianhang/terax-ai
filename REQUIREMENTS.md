@@ -6,3 +6,5 @@
 
 - [x] `REQ-005` Image preview: Tauri asset scope matches workspace image files; Markdown local images load through Blob URLs.
 
+
+- [x] REQ-006 Project folder switching: choose a local directory and reset the workspace.
