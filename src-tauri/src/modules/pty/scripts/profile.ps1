@@ -16,6 +16,7 @@ try {
     [Console]::InputEncoding  = [System.Text.UTF8Encoding]::new($false)
     [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
     $global:OutputEncoding    = [System.Text.UTF8Encoding]::new($false)
+    if ($PSStyle) { $PSStyle.OutputRendering = 'Ansi' }
 } catch {}
 
 if (Test-Path Function:prompt) {
