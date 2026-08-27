@@ -30,7 +30,8 @@ export type MessageKey =
   | "header.toggleSidebar"
   | "header.commandPalette"
   | "sidebar.files"
-  | "sidebar.git";
+  | "sidebar.git"
+  | "ai.openAgent";
 
 export function isLocale(value: unknown): value is Locale {
   return value === "zh-CN" || value === "en-US";

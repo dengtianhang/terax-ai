@@ -36,6 +36,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "header.commandPalette": "命令面板",
     "sidebar.files": "文件",
     "sidebar.git": "Git",
+    "ai.openAgent": "打开 AI 代理",
   },
   "en-US": {
     "settings.general": "General",
@@ -66,5 +67,6 @@ export const messages: Record<Locale, Record<string, string>> = {
     "header.commandPalette": "Command palette",
     "sidebar.files": "Files",
     "sidebar.git": "Git",
+    "ai.openAgent": "Open AI agent",
   },
 };
