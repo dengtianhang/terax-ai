@@ -4,6 +4,17 @@ import { messages, type Locale } from "./resources";
 export { DEFAULT_LOCALE, type Locale } from "./resources";
 export type MessageKey =
   | "settings.general"
+  | "settings.editor"
+  | "settings.themes"
+  | "settings.shortcuts"
+  | "settings.models"
+  | "settings.agents"
+  | "settings.about"
+  | "settings.generalDescription"
+  | "settings.appearance"
+  | "settings.zoom"
+  | "settings.explorer"
+  | "settings.terminal"
   | "settings.language"
   | "settings.languageDescription"
   | "settings.chinese"

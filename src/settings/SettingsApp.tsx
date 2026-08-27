@@ -3,6 +3,7 @@ import { WindowControls } from "@/components/WindowControls";
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from "@/lib/platform";
 import type { SettingsTab } from "@/modules/settings/openSettingsWindow";
 import { usePreferencesStore } from "@/modules/settings/preferences";
+import { useI18n } from "@/lib/i18n";
 import {
   AiScanIcon,
   InformationCircleIcon,
@@ -89,9 +90,10 @@ function readInitialTab(): SettingsTab {
 }
 
 export function SettingsApp() {
+  const { t } = useI18n();
   const [active, setActive] = useState<SettingsTab>(readInitialTab);
   const init = usePreferencesStore((s) => s.init);
-  const ActiveSection = TABS.find((t) => t.id === active)?.component;
+  const ActiveSection = TABS.find((tab) => tab.id === active)?.component;
 
   useEffect(() => {
     void init();
@@ -132,14 +134,16 @@ export function SettingsApp() {
           data-tauri-drag-region
         >
           <TabsList className="mx-auto h-7 bg-muted/40 px-2">
-            {TABS.map((t) => (
+            {TABS.map((tab) => (
               <TabsTrigger
-                key={t.id}
-                value={t.id}
+                key={tab.id}
+                value={tab.id}
                 className="h-6 gap-1.5 px-2.5 text-[11.5px]"
               >
-                <HugeiconsIcon icon={t.icon} size={12} strokeWidth={1.75} />
-                <span>{t.label}</span>
+                <HugeiconsIcon icon={tab.icon} size={12} strokeWidth={1.75} />
+                <span>
+                  {tab.id === "general" ? t("settings.general") : tab.label}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>

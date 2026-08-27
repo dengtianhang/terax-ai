@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import {
   type OsNotificationResult,
   testAgentOsNotification,
@@ -40,6 +41,7 @@ import {
   setTerminalShell,
   setTerminalWebglEnabled,
   setZoomLevel,
+  setLocale,
   TERMINAL_FONT_SIZES,
   TERMINAL_SCROLLBACK_PRESETS,
 } from "@/modules/settings/store";
@@ -93,6 +95,8 @@ type NotificationTestState =
   | "sending";
 
 export function GeneralSection() {
+  const { t } = useI18n();
+  const locale = usePreferencesStore((s) => s.locale);
   const { mode, setMode } = useTheme();
 
   const autostart = usePreferencesStore((s) => s.autostart);
@@ -176,12 +180,27 @@ export function GeneralSection() {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
-        title="General"
-        description="Mode, terminal, and startup."
+        title={t("settings.general")}
+        description={t("settings.generalDescription")}
       />
 
+      <SettingRow
+        title={t("settings.language")}
+        description={t("settings.languageDescription")}
+      >
+        <Select value={locale} onValueChange={(value) => void setLocale(value as typeof locale)}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="zh-CN">{t("settings.chinese")}</SelectItem>
+            <SelectItem value="en-US">{t("settings.english")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+
       <div className="flex flex-col gap-2">
-        <Label>Appearance</Label>
+        <Label>{t("settings.appearance")}</Label>
         <div className="grid grid-cols-3 gap-2">
           {APPEARANCE.map((o) => (
             <button
@@ -207,7 +226,7 @@ export function GeneralSection() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Zoom</Label>
+        <Label>{t("settings.zoom")}</Label>
         <div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[11.5px] text-muted-foreground">
@@ -228,7 +247,7 @@ export function GeneralSection() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Explorer</Label>
+        <Label>{t("settings.explorer")}</Label>
         <SettingRow
           title="Show hidden files"
           description="Include dot-prefixed files and folders (.env, .gitignore, .config) in the file explorer and search."
@@ -250,7 +269,7 @@ export function GeneralSection() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Terminal</Label>
+        <Label>{t("settings.terminal")}</Label>
         <SettingRow
           title={
             <span className="inline-flex items-center gap-1.5">
