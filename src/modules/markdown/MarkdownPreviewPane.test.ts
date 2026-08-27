@@ -21,4 +21,10 @@ describe("MarkdownPreviewPane Streamdown configuration", () => {
     expect(src).not.toContain("defaultRehypePlugins.sanitize");
   });
 
+  it("exposes local image diagnostics", () => {
+    expect(src).toContain("Markdown image diagnostics");
+    expect(src).toContain("fs_read_binary");
+    expect(src).toContain("workspace");
+  });
+
 });

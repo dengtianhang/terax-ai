@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { currentWorkspaceEnv } from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import type { ComponentProps } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { defaultRehypePlugins, Streamdown, type Components } from "streamdown";
 import { MarkdownLink } from "./MarkdownLink";
 import { MarkdownViewToggle } from "./MarkdownViewToggle";
@@ -22,6 +22,13 @@ type Props = {
   path: string;
   visible: boolean;
   onSetView: (mode: "rendered" | "raw") => void;
+};
+type ImageDiagnostic = {
+  source: string;
+  target: string | null;
+  workspace: string;
+  status: "loaded" | "failed";
+  error?: string;
 };
 
 const imageMimeTypes: Record<string, string> = {
@@ -78,7 +85,11 @@ function resolveMarkdownImagePath(source: string, markdownPath: string) {
     ? `${separator}${resolved.join(separator)}`
     : resolved.join(separator);
 }
-async function prepareMarkdownContent(content: string, markdownPath: string) {
+async function prepareMarkdownContent(
+  content: string,
+  markdownPath: string,
+  report: (diagnostic: ImageDiagnostic) => void,
+) {
   const objectUrls: string[] = [];
   let prepared = content.replace(
     /((?:href)=["'])(?!https?:|data:|blob:|asset:|[/.#])([^"']+)(["'])/gi,
@@ -96,9 +107,10 @@ async function prepareMarkdownContent(content: string, markdownPath: string) {
       : undefined;
     if (!target || !mime) continue;
     try {
+      const workspace = currentWorkspaceEnv();
       const bytes = await invoke<number[]>("fs_read_binary", {
         path: target,
-        workspace: currentWorkspaceEnv(),
+        workspace,
       });
       const objectUrl = URL.createObjectURL(
         new Blob([new Uint8Array(bytes)], { type: mime }),
@@ -108,15 +120,33 @@ async function prepareMarkdownContent(content: string, markdownPath: string) {
         match[0],
         `${match[1]}${objectUrl}${match[3]}`,
       );
-    } catch {}
+      report({
+        source,
+        target,
+        workspace: JSON.stringify(workspace),
+        status: "loaded",
+      });
+    } catch (error) {
+      report({
+        source,
+        target,
+        workspace: JSON.stringify(currentWorkspaceEnv()),
+        status: "failed",
+        error: String(error),
+      });
+    }
   }
   return { content: prepared, objectUrls };
 }
-type MarkdownImageProps = ComponentProps<"img"> & { markdownPath: string };
+type MarkdownImageProps = ComponentProps<"img"> & {
+  markdownPath: string;
+  report: (diagnostic: ImageDiagnostic) => void;
+};
 function MarkdownImage({
   src,
   alt,
   markdownPath,
+  report,
   ...props
 }: MarkdownImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -132,12 +162,20 @@ function MarkdownImage({
       ? imageMimeTypes[target.split(".").pop()?.toLowerCase() ?? ""]
       : undefined;
     if (!target || !mime) {
+      report({
+        source: String(src),
+        target,
+        workspace: JSON.stringify(currentWorkspaceEnv()),
+        status: "failed",
+        error: !target ? "无法解析图片路径" : "不支持的图片格式",
+      });
       setImageUrl(null);
       return;
     }
+    const workspace = currentWorkspaceEnv();
     void invoke<number[]>("fs_read_binary", {
       path: target,
-      workspace: currentWorkspaceEnv(),
+      workspace,
     })
       .then((bytes) => {
         if (!cancelled) {
@@ -146,13 +184,28 @@ function MarkdownImage({
           );
           setImageUrl(objectUrl);
         }
+        report({
+          source: String(src),
+          target,
+          workspace: JSON.stringify(workspace),
+          status: "loaded",
+        });
       })
-      .catch(() => setImageUrl(null));
+      .catch((error) => {
+        report({
+          source: String(src),
+          target,
+          workspace: JSON.stringify(workspace),
+          status: "failed",
+          error: String(error),
+        });
+        setImageUrl(null);
+      });
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [src, markdownPath]);
+  }, [src, markdownPath, report]);
   return (
     <img
       {...props}
@@ -166,6 +219,18 @@ function MarkdownImage({
 export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [renderedContent, setRenderedContent] = useState("");
+  const [imageDiagnostics, setImageDiagnostics] = useState<ImageDiagnostic[]>([]);
+  const reportImage = useCallback((diagnostic: ImageDiagnostic) => {
+    setImageDiagnostics((current) => {
+      const index = current.findIndex(
+        (item) => item.source === diagnostic.source && item.target === diagnostic.target,
+      );
+      if (index < 0) return [...current, diagnostic];
+      const next = [...current];
+      next[index] = diagnostic;
+      return next;
+    });
+  }, []);
   useEffect(() => {
     let cancelled = false;
     setStatus({ kind: "loading" });
@@ -190,11 +255,13 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
   useEffect(() => {
     if (status.kind !== "ready") {
       setRenderedContent("");
+      setImageDiagnostics([]);
       return;
     }
     let cancelled = false;
     let objectUrls: string[] = [];
-    void prepareMarkdownContent(status.content, path).then((result) => {
+    setImageDiagnostics([]);
+    void prepareMarkdownContent(status.content, path, reportImage).then((result) => {
       if (cancelled) {
         result.objectUrls.forEach((url) => URL.revokeObjectURL(url));
         return;
@@ -206,7 +273,7 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
       cancelled = true;
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [path, status]);
+  }, [path, status, reportImage]);
   return (
     <div
       className={cn(
@@ -215,6 +282,20 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
       )}
     >
       <MarkdownViewToggle mode="rendered" onChange={onSetView} />
+      {imageDiagnostics.length > 0 && (
+        <details className="absolute right-3 top-12 z-10 max-w-[min(620px,calc(100%-1.5rem))] rounded-md border border-border bg-background/95 p-2 text-[11px] shadow-md">
+          <summary className="cursor-pointer text-foreground">
+            Markdown image diagnostics ({imageDiagnostics.length})
+          </summary>
+          <div className="mt-2 max-h-56 space-y-2 overflow-auto">
+            {imageDiagnostics.map((item, index) => (
+              <pre key={`${item.source}-${index}`} className="whitespace-pre-wrap break-all text-muted-foreground">
+                {JSON.stringify(item, null, 2)}
+              </pre>
+            ))}
+          </div>
+        </details>
+      )}
       <div className="flex-1 overflow-auto">
         <div className="px-8 py-6">
           {status.kind === "loading" && (
@@ -246,6 +327,7 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
                     <MarkdownImage
                       {...props}
                       markdownPath={path}
+                      report={reportImage}
                     />
                   ),
                 } as Components
