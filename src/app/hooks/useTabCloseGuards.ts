@@ -61,7 +61,7 @@ export function useTabCloseGuards({
     async (id: number) => {
       // Last tab in its space can't be closed (closeTab refuses). Skip the
       // dialog entirely so confirming it doesn't appear to silently fail.
-      if (nextActiveInSpace(tabs, id) === null) return;
+      if (nextActiveInSpace(tabs, id, true) === null) return;
       const t = tabs.find((x) => x.id === id);
       if (t?.kind === "editor" && t.dirty) {
         setPendingCloseTab(id);
@@ -242,3 +242,4 @@ export function useTabCloseGuards({
     handlePathDeleted,
   };
 }
+

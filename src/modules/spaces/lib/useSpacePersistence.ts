@@ -41,6 +41,7 @@ export function useSpacePersistence({
 
   const flush = useCallback((snap: Snapshot) => {
     const groups = new Map<string, Tab[]>();
+    groups.set(snap.activeSpaceId, []);
     for (const t of snap.tabs) {
       const arr = groups.get(t.spaceId);
       if (arr) arr.push(t);
@@ -100,3 +101,5 @@ export function useSpacePersistence({
     };
   }, [enabled, flush]);
 }
+
+

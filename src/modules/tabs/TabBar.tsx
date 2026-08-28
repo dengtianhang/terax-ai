@@ -477,7 +477,6 @@ export function TabBar({
                       />
                     ) : null}
                   </span>
-                  {tabs.length > 1 && (
                     <span
                       role="button"
                       aria-label="Close tab"
@@ -502,7 +501,6 @@ export function TabBar({
                         strokeWidth={2}
                       />
                     </span>
-                  )}
                 </TabsTrigger>
               );
 
@@ -528,7 +526,6 @@ export function TabBar({
                           />
                           <span className="flex-1">Rename</span>
                         </ContextMenuItem>
-                        {tabs.length > 1 && (
                           <>
                             <ContextMenuSeparator />
                             <ContextMenuItem
@@ -542,8 +539,6 @@ export function TabBar({
                               />
                               <span className="flex-1">Close</span>
                             </ContextMenuItem>
-                          </>
-                        )}
                       </>
                     )}
                     <ContextMenuItem

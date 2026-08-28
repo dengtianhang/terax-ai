@@ -36,7 +36,13 @@ describe("nextActiveInSpace", () => {
     expect(nextActiveInSpace(tabs, 2)).toBeNull();
   });
 
+  it("allows an empty space when requested", () => {
+    expect(nextActiveInSpace([term(1, "a")], 1, true)).toBe(0);
+  });
+
   it("returns null for an unknown id", () => {
     expect(nextActiveInSpace([term(1, "a")], 99)).toBeNull();
   });
 });
+
+

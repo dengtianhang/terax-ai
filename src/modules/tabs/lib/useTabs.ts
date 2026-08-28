@@ -313,11 +313,12 @@ export function pickTabBySpaceIndex(
 export function nextActiveInSpace(
   tabs: Tab[],
   closingId: number,
+  allowEmpty = false,
 ): number | null {
   const closing = tabs.find((t) => t.id === closingId);
   if (!closing) return null;
   const sameSpace = tabs.filter((t) => t.spaceId === closing.spaceId);
-  if (sameSpace.length <= 1) return null;
+  if (sameSpace.length <= 1) return allowEmpty ? 0 : null;
   const idx = sameSpace.findIndex((t) => t.id === closingId);
   return (sameSpace[idx - 1] ?? sameSpace[idx + 1]).id;
 }
@@ -570,24 +571,9 @@ export function planSpaceRemoval(
   return { tabs: next, disposeLeafIds, activeId };
 }
 
-export function useTabs(initial?: Partial<TerminalTab>) {
-  const [tabs, setTabs] = useState<Tab[]>(() => {
-    const tabId = 1;
-    const leafId = 2;
-    return [
-      {
-        id: tabId,
-        kind: "terminal",
-        spaceId: DEFAULT_SPACE_ID,
-        cold: true,
-        title: initial?.title ?? "shell",
-        cwd: initial?.cwd,
-        paneTree: { kind: "leaf", id: leafId, cwd: initial?.cwd },
-        activeLeafId: leafId,
-      },
-    ];
-  });
-  const [activeId, setActiveId] = useState(1);
+export function useTabs(_initial?: Partial<TerminalTab>) {
+  const [tabs, setTabs] = useState<Tab[]>(() => []);
+  const [activeId, setActiveId] = useState(0);
   // Gates warming until boot resolves the restore, so no shell spawns before it.
   const [booted, setBooted] = useState(false);
   const nextIdRef = useRef(3);
@@ -622,7 +608,6 @@ export function useTabs(initial?: Partial<TerminalTab>) {
   }, []);
 
   const replaceTabs = useCallback((next: Tab[], nextActiveId: number) => {
-    if (next.length === 0) return;
     tabsRef.current = next;
     activeIdRef.current = nextActiveId;
     setTabs(next);
@@ -1133,7 +1118,7 @@ export function useTabs(initial?: Partial<TerminalTab>) {
   const closeTab = useCallback((id: number) => {
     let toDispose: number[] = [];
     setTabs((curr) => {
-      const fallback = nextActiveInSpace(curr, id);
+      const fallback = nextActiveInSpace(curr, id, true);
       if (fallback === null) return curr;
       const target = curr.find((t) => t.id === id);
       if (target?.kind === "terminal") {
@@ -1448,3 +1433,4 @@ export function useTabs(initial?: Partial<TerminalTab>) {
     resetWorkspace,
   };
 }
+
