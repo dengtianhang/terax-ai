@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/resizable";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { consumeLaunchFiles, getLaunchDir } from "@/lib/launchDir";
+import { consumeLaunchFiles, getLaunchDir, isNewWindowLaunch } from "@/lib/launchDir";
 import { quoteShellArg } from "@/lib/shellQuote";
 import { usePresence } from "@/lib/usePresence";
 import { useZoom } from "@/lib/useZoom";
@@ -107,6 +107,10 @@ import {
   useWorkspaceEnvStore,
   workspaceScopeKey,
   type WorkspaceEnv,
+  loadRecentDirectories,
+  recordRecentDirectory,
+  removeRecentDirectory,
+  type RecentDirectory,
 } from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -189,6 +193,11 @@ export default function App() {
   const searchAddons = useRef<Map<number, SearchAddon>>(new Map());
   const [activeSearchAddon, setActiveSearchAddon] =
     useState<SearchAddon | null>(null);
+  const [recentDirectories, setRecentDirectories] = useState<RecentDirectory[]>([]);
+
+  useEffect(() => {
+    void loadRecentDirectories().then(setRecentDirectories).catch(() => {});
+  }, []);
   const searchInlineRef = useRef<SearchInlineHandle | null>(null);
   const terminalRefs = useRef<Map<number, TerminalPaneHandle>>(new Map());
   const editorRefs = useRef<Map<number, EditorPaneHandle>>(new Map());
@@ -252,9 +261,7 @@ export default function App() {
     [switchWorkspace, activeSpaceId],
   );
 
-  const handleChooseDirectory = useCallback(async () => {
-    const selected = await invoke<string | null>("fs_pick_directory");
-    if (!selected) return;
+  const switchToDirectory = useCallback(async (selected: string) => {
     const dirty = tabsRef.current.some((t) => t.kind === "editor" && t.dirty);
     if (dirty) {
       window.alert("Save or close unsaved editor tabs before switching directory.");
@@ -268,10 +275,29 @@ export default function App() {
       return;
     }
     resetWorkspace(selected);
+    setRecentDirectories(await recordRecentDirectory(selected));
   }, [clearWorkspaceState, resetWorkspace]);
+
+  const handleChooseDirectory = useCallback(async () => {
+    return invoke<string | null>("fs_pick_directory");
+  }, []);
+
+  const handleOpenDirectoryInNewWindow = useCallback(async (path: string) => {
+    try {
+      await invoke("open_workspace_window", { path });
+      setRecentDirectories(await recordRecentDirectory(path));
+    } catch (error) {
+      window.alert(String(error));
+    }
+  }, []);
+
+  const handleRemoveRecentDirectory = useCallback(async (path: string) => {
+    setRecentDirectories(await removeRecentDirectory(path));
+  }, []);
 
   useSpacesBoot({
     ready: launchCwdResolved,
+    newWindow: isNewWindowLaunch(),
     launchCwd,
     home,
     allocId,
@@ -1534,6 +1560,10 @@ export default function App() {
               onCd={sendCd}
               onWorkspaceChange={handleWorkspaceChange}
               onChooseDirectory={handleChooseDirectory}
+              recentDirectories={recentDirectories}
+              onOpenDirectoryInCurrentWindow={switchToDirectory}
+              onOpenDirectoryInNewWindow={handleOpenDirectoryInNewWindow}
+              onRemoveRecentDirectory={handleRemoveRecentDirectory}
               onOpenMini={openMini}
               onOpenAi={togglePanelAndFocus}
               hasComposer={hasComposer}

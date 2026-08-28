@@ -3,11 +3,12 @@ pub mod modules;
 use modules::{
     agent, control, fs, git, history, lsp, net, pty, secrets, shell, vibrancy, workspace,
 };
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::async_runtime::spawn_blocking;
 use tauri::{Emitter, Manager, PhysicalPosition, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
-use tauri_plugin_window_state::StateFlags;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 #[cfg(windows)]
 use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
 #[cfg(windows)]
@@ -20,6 +21,9 @@ struct LaunchDir(Mutex<Option<String>>);
 /// Drained on first read so HMR / re-mounts can't replay the launch files.
 #[derive(Default)]
 struct LaunchFiles(Mutex<Vec<String>>);
+
+#[derive(Default)]
+struct WorkspaceLaunches(Mutex<HashMap<String, String>>);
 
 #[tauri::command]
 fn get_launch_dir(state: State<'_, LaunchDir>) -> Option<String> {
@@ -92,6 +96,72 @@ fn parse_launch_target() -> LaunchTarget {
     resolve_launch_target(entries)
 }
 
+
+#[tauri::command]
+async fn open_workspace_window(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    path: String,
+    launches: State<'_, WorkspaceLaunches>,
+) -> Result<(), String> {
+    let label = format!(
+        "workspace-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_nanos(),
+    );
+    launches
+        .0
+        .lock()
+        .map_err(|_| "workspace launch state unavailable".to_string())?
+        .insert(label.clone(), path);
+
+    let main_position = window.outer_position().ok();
+    let main_size = window.outer_size().ok();
+    let main_maximized = window.is_maximized().unwrap_or(false);
+    let new_window = WebviewWindowBuilder::new(
+        &app,
+        &label,
+        WebviewUrl::App("index.html".into()),
+    )
+    .title("Terax")
+    .inner_size(1100.0, 760.0)
+    .min_inner_size(420.0, 280.0)
+    .resizable(true)
+    .transparent(true)
+    .decorations(false)
+    .build()
+    .map_err(|error| error.to_string())?;
+
+    if let Some(position) = main_position {
+        let _ = new_window.set_position(position);
+    }
+    if let Some(size) = main_size {
+        let _ = new_window.set_size(size);
+    }
+    if main_maximized {
+        let _ = new_window.maximize();
+    }
+    let _ = new_window.show();
+    Ok(())
+}
+
+#[tauri::command]
+fn get_workspace_launch_dir(
+    window: tauri::WebviewWindow,
+    launches: State<'_, WorkspaceLaunches>,
+) -> Option<String> {
+    let label = window.label().to_string();
+    let path = launches
+        .0
+        .lock()
+        .ok()
+        .and_then(|mut entries| entries.remove(&label));
+    log::info!("workspace launch directory: label={label:?} path={path:?}");
+    path
+}
+
 #[tauri::command]
 async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Result<(), String> {
     let url_path = match tab.as_deref() {
@@ -103,8 +173,6 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
     if let Some(window) = app.get_webview_window("settings") {
         let _ = window.show();
         let _ = window.set_always_on_top(false);
-        #[cfg(debug_assertions)]
-        window.open_devtools();
         if let Some(main) = &main {
             let _ = main.set_enabled(false);
             log::info!("settings existing: main_pos={:?} main_size={:?} main_monitor={:?} settings_pos={:?} settings_size={:?}", main.outer_position(), main.outer_size(), main.current_monitor().ok().flatten().map(|m| (m.position().clone(), m.size().clone(), m.work_area().clone())), window.outer_position(), window.outer_size());
@@ -143,8 +211,6 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
         let _ = main.set_enabled(false);
     }
     let _ = window.show();
-    #[cfg(debug_assertions)]
-    window.open_devtools();
     if let Some(main) = &main {
             center_settings_window(main, &window);
     }
@@ -160,6 +226,20 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
     });
 
     Ok(())
+}
+
+fn center_main_window(window: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    {
+        if let (Some(monitor), Ok(size)) = (window.current_monitor().ok().flatten(), window.outer_size()) {
+            let area = monitor.work_area();
+            let x = area.position.x + (area.size.width as i32 - size.width as i32) / 2;
+            let y = area.position.y + (area.size.height as i32 - size.height as i32) / 2;
+            let _ = window.set_position(PhysicalPosition::new(x, y));
+            return;
+        }
+    }
+    let _ = window.center();
 }
 
 fn center_settings_window(main: &tauri::WebviewWindow, settings: &tauri::WebviewWindow) {
@@ -269,6 +349,7 @@ pub fn run() {
         .plugin(
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(StateFlags::all() & !StateFlags::VISIBLE)
+                .with_filter(|label| label == "main")
                 .skip_initial_state("settings")
                 .build(),
         )
@@ -285,6 +366,40 @@ pub fn run() {
         .setup(move |_app| {
             if let Err(error) = control::start(_app.handle().clone(), control_for_setup.clone()) {
                 log::warn!("could not start Terax control server: {error}");
+            }
+            if let Some(main) = _app.get_webview_window("main") {
+                let was_maximized = Arc::new(Mutex::new(main.is_maximized().unwrap_or(false)));
+                let state = Arc::clone(&was_maximized);
+                let window = main.clone();
+                let app_handle = _app.handle().clone();
+                main.on_window_event(move |event| {
+                    if !matches!(event, WindowEvent::Resized { .. } | WindowEvent::Moved { .. } | WindowEvent::CloseRequested { .. }) {
+                        return;
+                    }
+                    let is_maximized = window.is_maximized().unwrap_or(false);
+                    let Ok(mut previous) = state.lock() else {
+                        return;
+                    };
+                    let restored = *previous && !is_maximized;
+                    *previous = is_maximized;
+                    drop(previous);
+                    if restored {
+                        let delayed_window = window.clone();
+                        let delayed_app = app_handle.clone();
+                        tauri::async_runtime::spawn(async move {
+                            std::thread::sleep(std::time::Duration::from_millis(120));
+                            center_main_window(&delayed_window);
+                            std::thread::sleep(std::time::Duration::from_millis(40));
+                            let _ = delayed_app.save_window_state(
+                                StateFlags::all() & !StateFlags::VISIBLE,
+                            );
+                        });
+                    } else {
+                        let _ = app_handle.save_window_state(
+                            StateFlags::all() & !StateFlags::VISIBLE,
+                        );
+                    }
+                });
             }
             Ok(())
         })
@@ -306,6 +421,7 @@ pub fn run() {
         })
         .manage(LaunchDir(Mutex::new(cli_dir)))
         .manage(LaunchFiles(Mutex::new(launch.files)))
+        .manage(WorkspaceLaunches::default())
         .invoke_handler(tauri::generate_handler![
             pty::pty_open,
             pty::pty_write,
@@ -378,7 +494,9 @@ pub fn run() {
             control::control_respond,
             get_launch_dir,
             get_launch_files,
+            get_workspace_launch_dir,
             open_settings_window,
+            open_workspace_window,
             agent::agent_enable_hooks,
             agent::agent_hooks_status,
             secrets::secrets_get,
@@ -447,7 +565,8 @@ pub fn run() {
 #[cfg(test)]
 mod launch_target_tests {
     use super::{resolve_launch_target, LaunchEntry, LaunchTarget};
-    use std::path::PathBuf;
+    use std::collections::HashMap;
+use std::path::PathBuf;
 
     #[test]
     fn no_entries_resolves_to_empty() {

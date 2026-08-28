@@ -1,5 +1,6 @@
 import { type RefObject, useCallback, useEffect, useState } from "react";
 import { homeDir } from "@tauri-apps/api/path";
+import { getLaunchDir, isNewWindowLaunch } from "@/lib/launchDir";
 import { native } from "@/modules/ai/lib/native";
 import type { Tab } from "@/modules/tabs";
 import {
@@ -35,8 +36,9 @@ export function useWorkspaceSwitcher({
   resetWorkspace,
   clearWorkspaceState,
 }: Params) {
+  const initialLaunchDir = getLaunchDir() ?? null;
   const [home, setHome] = useState<string | null>(null);
-  const [launchCwd, setLaunchCwd] = useState<string | null>(null);
+  const [launchCwd, setLaunchCwd] = useState<string | null>(initialLaunchDir);
   const [launchCwdResolved, setLaunchCwdResolved] = useState(false);
 
   useEffect(() => {
@@ -54,12 +56,16 @@ export function useWorkspaceSwitcher({
   }, []);
 
   useEffect(() => {
+    if (initialLaunchDir || isNewWindowLaunch()) {
+      setLaunchCwdResolved(true);
+      return;
+    }
     native
       .workspaceCurrentDir()
       .then(setLaunchCwd)
       .catch(() => setLaunchCwd(null))
       .finally(() => setLaunchCwdResolved(true));
-  }, []);
+  }, [initialLaunchDir]);
 
   const authorizeHome = useCallback(async (nextHome: string) => {
     setHome(nextHome);
@@ -122,9 +128,10 @@ export function useWorkspaceSwitcher({
         return null;
       }
       await authorizeHome(nextHome);
-      return nextHome;
+      if (initialLaunchDir) setLaunchCwd(initialLaunchDir);
+      return initialLaunchDir ?? nextHome;
     },
-    [setWorkspaceEnv, authorizeHome],
+    [setWorkspaceEnv, authorizeHome, initialLaunchDir],
   );
 
   return {

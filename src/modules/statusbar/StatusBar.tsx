@@ -26,6 +26,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { RecentDirectory } from "@/modules/workspace";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+
+function directoryName(path: string): string {
+  const normalized = path.replace(/[\\/]+$/, "");
+  return normalized.split(/[\\/]/).pop() || normalized;
+}
 
 type Props = {
   cwd: string | null;
@@ -33,9 +41,10 @@ type Props = {
   home: string | null;
   onCd: (path: string) => void;
   onWorkspaceChange: (env: WorkspaceEnv) => void;
-  onChooseDirectory: () => void;
+  onChooseDirectory: () => Promise<string | null>;
   recentDirectories: RecentDirectory[];
-  onChooseRecentDirectory: (path: string) => void;
+  onOpenDirectoryInCurrentWindow: (path: string) => void;
+  onOpenDirectoryInNewWindow: (path: string) => void;
   onRemoveRecentDirectory: (path: string) => void;
   onOpenMini: () => void;
   /** Opens the panel, or Settings > Models when no API key is loaded. */
@@ -53,7 +62,8 @@ export function StatusBar({
   onWorkspaceChange,
   onChooseDirectory,
   recentDirectories,
-  onChooseRecentDirectory,
+  onOpenDirectoryInCurrentWindow,
+  onOpenDirectoryInNewWindow,
   onRemoveRecentDirectory,
   onOpenMini,
   onOpenAi,
@@ -62,6 +72,11 @@ export function StatusBar({
 }: Props) {
   const panelOpen = useChatStore((s) => s.panelOpen);
   const { t, tt } = useI18n();
+  const [directoryToOpen, setDirectoryToOpen] = useState<string | null>(null);
+
+  const handlePickDirectory = async () => {
+    setDirectoryToOpen(await onChooseDirectory());
+  };
 
   return (
     <footer className="flex h-8 shrink-0 items-center justify-between gap-3 pl-3 pr-4 text-[11px]">
@@ -78,18 +93,25 @@ export function StatusBar({
               <span className="hidden sm:inline">{t("workspace.selectDirectory")}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-80">
-            <DropdownMenuItem onSelect={onChooseDirectory}>
+          <DropdownMenuContent align="start" className="w-96">
+            <DropdownMenuItem onSelect={() => void handlePickDirectory()}>
               {t("workspace.selectDirectory")}
             </DropdownMenuItem>
             {recentDirectories.length > 0 ? <DropdownMenuSeparator /> : null}
             {recentDirectories.map((entry) => (
               <DropdownMenuItem
                 key={entry.path}
-                className="group/recent max-w-80"
-                onSelect={() => onChooseRecentDirectory(entry.path)}
+                className="group/recent max-w-96 items-start"
+                onSelect={() => setDirectoryToOpen(entry.path)}
               >
-                <span className="min-w-0 flex-1 truncate" title={entry.path}>{entry.path}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium" title={entry.path}>
+                    {directoryName(entry.path)}
+                  </span>
+                  <span className="block truncate text-xs font-normal text-muted-foreground" title={entry.path}>
+                    {entry.path}
+                  </span>
+                </span>
                 <button
                   type="button"
                   className="ml-auto hidden shrink-0 rounded px-1 text-muted-foreground hover:bg-accent hover:text-foreground group-hover/recent:block"
@@ -106,6 +128,19 @@ export function StatusBar({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        <Dialog open={directoryToOpen !== null} onOpenChange={(open) => !open && setDirectoryToOpen(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>打开项目目录</DialogTitle>
+              <DialogDescription className="break-all">{directoryToOpen}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDirectoryToOpen(null)}>取消</Button>
+              <Button onClick={() => { if (directoryToOpen) onOpenDirectoryInCurrentWindow(directoryToOpen); setDirectoryToOpen(null); }}>当前窗口打开</Button>
+              <Button onClick={() => { if (directoryToOpen) onOpenDirectoryInNewWindow(directoryToOpen); setDirectoryToOpen(null); }}>新窗口打开</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
         <LspStatusPill filePath={filePath ?? null} />
         <DiagnosticsBadge filePath={filePath ?? null} />

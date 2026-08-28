@@ -1,9 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 let cached: string | undefined;
 
 export async function initLaunchDir(): Promise<void> {
+  const windowDir = await invoke<string | null>("get_workspace_launch_dir").catch(() => null);
+  const queryDir = new URLSearchParams(window.location.search).get("workspace");
   const dir =
+    windowDir ??
+    queryDir ??
     (await invoke<string | null>("get_launch_dir").catch(() => null)) ??
     (await invoke<string>("workspace_current_dir").catch(() => null));
   cached = dir ? dir.replace(/\\/g, "/") : undefined;
@@ -21,4 +26,11 @@ export function getLaunchDir(): string | undefined {
 export async function consumeLaunchFiles(): Promise<string[]> {
   const files = await invoke<string[]>("get_launch_files").catch(() => []);
   return files.map((f) => f.replace(/\\/g, "/"));
+}
+
+export function isNewWindowLaunch(): boolean {
+  return (
+    getCurrentWindow().label.startsWith("workspace-") ||
+    new URLSearchParams(window.location.search).get("workspace") !== null
+  );
 }

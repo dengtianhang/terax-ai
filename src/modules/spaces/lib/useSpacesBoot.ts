@@ -12,6 +12,7 @@ import { useSpaces } from "./useSpaces";
 
 type Params = {
   ready: boolean;
+  newWindow: boolean;
   launchCwd: string | null;
   home: string | null;
   allocId: () => number;
@@ -36,6 +37,7 @@ function uniqueCwds(tabs: Tab[]): string[] {
 
 export function useSpacesBoot({
   ready,
+  newWindow,
   launchCwd,
   home,
   allocId,
@@ -53,6 +55,32 @@ export function useSpacesBoot({
     void (async () => {
       try {
         const { spaces, activeId, states } = await loadAll();
+
+        if (newWindow && launchCwd) {
+          await usePreferencesStore.getState().init().catch(() => {});
+          const now = Date.now();
+          const root = launchCwd.replace(/[\\/]+$/, "");
+          const name = root.split(/[\\/]/).pop() || root;
+          const meta: SpaceMeta = {
+            id: `window-${now.toString(36)}`,
+            name,
+            root: launchCwd,
+            env: parseWorkspaceScopeKey(
+              usePreferencesStore.getState().defaultWorkspaceEnv,
+            ),
+            createdAt: now,
+            updatedAt: now,
+          };
+          const nextSpaces = [...spaces, meta];
+          await saveSpacesList(nextSpaces);
+          await saveActiveId(meta.id);
+          await adoptWorkspaceEnv(meta.env);
+          await native.workspaceAuthorize(launchCwd);
+          setActiveSpaceForNewTabs(meta.id);
+          useSpaces.getState().hydrate(nextSpaces, meta.id);
+          replaceTabs([], 0);
+          return;
+        }
 
         if (spaces.length === 0) {
           const root = launchCwd ?? home ?? null;
@@ -117,6 +145,7 @@ export function useSpacesBoot({
     })();
   }, [
     ready,
+    newWindow,
     launchCwd,
     home,
     allocId,

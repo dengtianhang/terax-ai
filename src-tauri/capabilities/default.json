@@ -4,10 +4,12 @@
   "description": "Capability for the main window",
   "windows": [
     "main",
-    "settings"
+    "settings",
+    "workspace-*"
   ],
   "permissions": [
     "core:default",
+    "core:window:allow-create",
     "core:window:allow-start-dragging",
     "core:window:allow-close",
     "core:window:allow-destroy",

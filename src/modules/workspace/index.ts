@@ -9,3 +9,5 @@ export {
   type WorkspaceEnv,
   type WslDistro,
 } from "./env";
+
+export { loadRecentDirectories, recordRecentDirectory, removeRecentDirectory, type RecentDirectory } from './recentDirectories';
