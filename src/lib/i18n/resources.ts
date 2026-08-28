@@ -288,6 +288,10 @@ export const textMessages: Record<Locale, Record<string, string>> = {
     "Notifications are disabled by the system": "系统已禁用通知",
     "Terax could not request a native notification": "Terax 无法请求系统通知",
     "Send a native test notification after two seconds": "两秒后发送系统测试通知",
+    "Launch agents": "启动代理", "One workspace, up to four panes": "一个工作区，最多四个面板",
+    Instances: "实例", instance: "实例", instances: "实例", "Start command": "启动命令",
+    "Reset to": "重置为", Reset: "重置", "Aliases and flags are supported.": "支持别名和参数。",
+    Launch: "启动", agent: "代理", agents: "代理",
   },
   "en-US": {},
 };
