@@ -26,6 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -191,6 +192,7 @@ export function AiChatView({
   clearError,
   addToolApprovalResponse,
 }: Props) {
+  const { tt } = useI18n();
   const isBusy = status === "submitted" || status === "streaming";
   const lastMessage = messages[messages.length - 1];
   const showSpinner = isBusy && lastMessage?.role === "user";
@@ -215,8 +217,8 @@ export function AiChatView({
       <Conversation>
         <ConversationContent>
           <ConversationEmptyState
-            title="Ask Terax anything"
-            description="Explain command output, fix errors, generate snippets, or run a task."
+            title={tt("Ask Terax anything")}
+            description={tt("Explain command output, fix errors, generate snippets, or run a task.")}
           />
         </ConversationContent>
       </Conversation>

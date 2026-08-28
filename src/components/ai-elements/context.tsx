@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import type { LanguageModelUsage } from "ai";
 import type { ComponentProps } from "react";
 import { createContext, useContext, useMemo } from "react";
@@ -57,6 +58,7 @@ export const Context = ({
 };
 
 const ContextIcon = () => {
+  const { tt } = useI18n();
   const { usedTokens, maxTokens } = useContextValue();
   const circumference = 2 * Math.PI * ICON_RADIUS;
   const usedPercent = usedTokens / maxTokens;
@@ -64,7 +66,7 @@ const ContextIcon = () => {
 
   return (
     <svg
-      aria-label="Model context usage"
+      aria-label={tt("Model context usage")}
       height="20"
       role="img"
       style={{ color: "currentcolor" }}

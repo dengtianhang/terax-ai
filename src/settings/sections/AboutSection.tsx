@@ -7,6 +7,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { arch, platform } from "@tauri-apps/plugin-os";
 import { useEffect, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
+import { useI18n } from "@/lib/i18n";
 
 const REPO_URL = "https://github.com/crynta/terax-ai";
 const WEBSITE = "https://terax.app";
@@ -21,6 +22,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 export function AboutSection() {
+  const { t } = useI18n();
   const [version, setVersion] = useState("");
   const [name, setName] = useState("Terax");
   const [build, setBuild] = useState("");
@@ -66,7 +68,7 @@ export function AboutSection() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionHeader title="About" description="" />
+      <SectionHeader title={t("settings.about")} description={t("settings.aboutDescription")} />
 
       <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-card/60 p-5">
         <img src="/logo.png" alt="" className="size-12" draggable={false} />

@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { IS_MAC } from "@/lib/platform";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { type GitBranchEntry, native } from "@/modules/ai/lib/native";
 import {
   copyToClipboard,
@@ -397,6 +398,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
   repositoryTarget,
   onFollowRepositoryContext,
 }: Props) {
+  const { tt } = useI18n();
   const scm = useSourceControlPanel(open, sourceControl, onOpenDiff);
   const refreshAnimationRef = useRef<number | null>(null);
   const [refreshAnimating, setRefreshAnimating] = useState(false);
@@ -802,7 +804,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
               strokeWidth={1.85}
               className="shrink-0"
             />
-            <span className="flex-1 text-[12px] font-medium">Commit Graph</span>
+            <span className="flex-1 text-[12px] font-medium">{tt("Commit Graph")}</span>
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               size={12}
@@ -813,23 +815,23 @@ export const SourceControlPanel = memo(function SourceControlPanel({
         ) : null}
 
         {panelState === "loading" ? (
-          <PanelCenter title="Loading repository" />
+          <PanelCenter title={tt("Loading repository")} />
         ) : null}
 
         {panelState === "no-repo" ? (
           <PanelCenter
-            title="No repository"
+            title={tt("No repository")}
             body="The active workspace is not inside a Git repository."
           />
         ) : null}
 
         {panelState === "error" ? (
           <PanelCenter
-            title="Source control error"
+            title={tt("Source control error")}
             body={scm.statusError ?? "Unknown source control error"}
             action={
               <Button size="sm" onClick={() => void scm.refresh()}>
-                Retry
+                {tt("Retry")}
               </Button>
             }
           />
@@ -851,7 +853,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                   value={scm.commitMessage}
                   onChange={(event) => scm.setCommitMessage(event.target.value)}
                   onKeyDown={handleCommitShortcut}
-                  placeholder="Commit message"
+                  placeholder={tt("Commit message")}
                   rows={3}
                   className={cn(
                     "min-h-[72px] border-border resize-none rounded-lg bg-transparent px-3 pb-7 pt-2.5 text-[12.5px] leading-snug shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0 focus:border-0",
@@ -859,10 +861,10 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                 />
                 <div className="pointer-events-none absolute inset-x-3 bottom-1.5 flex items-center justify-between p-1 gap-2 text-[10px] tabular-nums text-muted-foreground/55">
                   {scm.commitMessage.length > 0 ? (
-                    <span>Ch: {scm.commitMessage.length}</span>
+                    <span>{tt("Characters")}: {scm.commitMessage.length}</span>
                   ) : (
                     <span className="flex gap-2 items-center">
-                      {commitShortcut} <p>to commit</p>
+                      {commitShortcut} <p>{tt("to commit")}</p>
                     </span>
                   )}
                 </div>
@@ -917,8 +919,8 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                 />
                 <span className="truncate font-medium text-foreground/85">
                   {stagedCount === 0
-                    ? "Nothing staged"
-                    : `${stagedCount} ${stagedCount === 1 ? "file" : "files"} staged`}
+                    ? tt("Nothing staged")
+                    : `${stagedCount} ${stagedCount === 1 ? tt("file") : tt("files")} ${tt("staged")}`}
                 </span>
                 <span className="ml-auto shrink-0 truncate text-muted-foreground/65">
                   {pushStatusLabel}
@@ -934,7 +936,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                       disabled={!canCommit}
                       onClick={() => void scm.commit()}
                     >
-                      {scm.actionBusy === "commit" ? "Committing…" : "Commit"}
+                      {scm.actionBusy === "commit" ? tt("Committing...") : tt("Commit")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -958,7 +960,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                       }
                       onClick={() => void scm.push()}
                     >
-                      {scm.actionBusy === "push" ? "Pushing…" : "Push"}
+                      {scm.actionBusy === "push" ? tt("Pushing...") : tt("Push")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -983,7 +985,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                 ref={containerRef}
                 tabIndex={0}
                 role="listbox"
-                aria-label="Changed files"
+                aria-label={tt("Changed files")}
                 aria-activedescendant={
                   focusedRowKey ? `scm-row-${focusedRowKey}` : undefined
                 }
@@ -1049,7 +1051,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogTitle>{tt("Discard changes?")}</AlertDialogTitle>
             <AlertDialogDescription>
               {scm.pendingDiscard?.scope === "all"
                 ? `This will discard ${scm.pendingDiscard.label} and cannot be undone.`
@@ -1060,10 +1062,10 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => scm.cancelPendingDiscard()}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => void scm.confirmPendingDiscard()}>
-              Discard
+              {tt("Discard")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1168,6 +1170,7 @@ function ListHeader({
 }: RowRendererProps & {
   row: Extract<RowDescriptor, { kind: "list-header" }>;
 }) {
+  const { tt } = useI18n();
   return (
     <div className="flex h-7 items-center gap-2 px-3">
       <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/85">
@@ -1177,9 +1180,9 @@ function ListHeader({
         {row.count}
       </span>
       <label className="ml-auto flex shrink-0 cursor-pointer select-none items-center gap-1.5 text-[10.5px] font-medium text-muted-foreground hover:text-foreground">
-        <span>All</span>
+        <span>{tt("All")}</span>
         <Checkbox
-          aria-label="Stage all changes"
+          aria-label={tt("Stage all changes")}
           checked={checkboxValue(headerCheckState)}
           disabled={actionBusy !== null}
           onCheckedChange={() => void onToggleAll()}

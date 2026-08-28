@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import { resolveLspSwitchState } from "./lspSwitchState";
 import { SettingRow } from "./SettingRow";
 
 export function LspServersGroup() {
+  const { tt } = useI18n();
   const activation = usePreferencesStore((s) => s.lspActivation);
   const customServers = usePreferencesStore((s) => s.lspCustomServers);
   const [installTarget, setInstallTarget] = useState<LspPreset | null>(null);
@@ -39,7 +41,7 @@ export function LspServersGroup() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <Label>Language servers</Label>
+        <Label>{tt("Language servers")}</Label>
         <AddCustomServerDialog customServers={customServers} />
       </div>
       {servers.map((server) => (
@@ -74,6 +76,7 @@ function ServerRow({
   customServers: LspCustomServer[];
   onInstall: () => void;
 }) {
+  const { tt } = useI18n();
   const detected = useLspRuntimeStore((s) => s.detected[server.command]);
 
   useEffect(() => {
@@ -106,7 +109,7 @@ function ServerRow({
           type="button"
           className="cursor-pointer rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           onClick={() => void redetectBinary(server.command)}
-          title="Detect again"
+          title={tt("Detect again")}
         >
           <HugeiconsIcon icon={Refresh01Icon} size={12} strokeWidth={1.75} />
         </button>
@@ -120,7 +123,7 @@ function ServerRow({
                 customServers.filter((c) => c.id !== server.id),
               );
             }}
-            title="Remove server"
+            title={tt("Remove server")}
           >
             <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={1.75} />
           </button>
@@ -151,6 +154,7 @@ function AddCustomServerDialog({
 }: {
   customServers: LspCustomServer[];
 }) {
+  const { tt } = useI18n();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [command, setCommand] = useState("");
@@ -222,12 +226,12 @@ function AddCustomServerDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-6 px-2 text-[11px]">
-          Add custom server
+          {tt("Add custom server")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-sm">Custom language server</DialogTitle>
+          <DialogTitle className="text-sm">{tt("Custom language server")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2.5">
           {field("Name", name, setName, "Zig")}

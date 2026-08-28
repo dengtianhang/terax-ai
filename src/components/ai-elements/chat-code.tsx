@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { useChatStore } from "@/modules/ai/store/chatStore";
 import {
   ArrowRight01Icon,
@@ -213,6 +214,7 @@ function CommandCard({ code, lang }: { code: string; lang: string }) {
 }
 
 function RunInTerminalButton({ command }: { command: string }) {
+  const { tt } = useI18n();
   const [sent, setSent] = useState(false);
   const tRef = useRef<number>(0);
   useEffect(() => () => window.clearTimeout(tRef.current), []);
@@ -229,20 +231,21 @@ function RunInTerminalButton({ command }: { command: string }) {
       variant="ghost"
       onClick={onRun}
       className="h-5 gap-1 px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
-      aria-label="Run in active terminal"
-      title="Run in active terminal"
+      aria-label={tt("Run in active terminal")}
+      title={tt("Run in active terminal")}
     >
       <HugeiconsIcon
         icon={sent ? TerminalIcon : ArrowRight01Icon}
         size={11}
         strokeWidth={1.75}
       />
-      <span>{sent ? "Sent" : "Run"}</span>
+      <span>{sent ? tt("Sent") : tt("Run")}</span>
     </Button>
   );
 }
 
 function CopyButton({ text }: { text: string }) {
+  const { tt } = useI18n();
   const [copied, setCopied] = useState(false);
   const tRef = useRef<number>(0);
 
@@ -266,7 +269,7 @@ function CopyButton({ text }: { text: string }) {
       variant="ghost"
       onClick={onCopy}
       className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
-      aria-label="Copy code"
+      aria-label={tt("Copy code")}
     >
       <HugeiconsIcon
         icon={copied ? CheckmarkCircle01Icon : CopyIcon}

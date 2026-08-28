@@ -92,6 +92,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ProviderIcon } from "../components/ProviderIcon";
 import { ProviderKeyCard } from "../components/ProviderKeyCard";
 import { SectionHeader } from "../components/SectionHeader";
+import { useI18n } from "@/lib/i18n";
 
 type KeysMap = Record<ProviderId, string | null>;
 
@@ -149,6 +150,7 @@ const LOCAL_META: Partial<Record<ProviderId, LocalMeta>> = {
 };
 
 export function ModelsSection() {
+  const { t, tt } = useI18n();
   const [keys, setKeys] = useState<KeysMap | null>(null);
   const [epKeys, setEpKeys] = useState<CustomEndpointKeys>({});
   const [adding, setAdding] = useState<Set<ProviderId>>(new Set());
@@ -356,8 +358,8 @@ export function ModelsSection() {
   return (
     <div className="flex flex-col gap-7">
       <SectionHeader
-        title="Models"
-        description="Connect the providers you use. Keys live in your OS keychain and are used only by Terax."
+        title={t("settings.models")}
+        description={t("settings.modelsDescription")}
       />
 
       <DefaultsBlock
@@ -371,7 +373,7 @@ export function ModelsSection() {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <Label>Providers</Label>
+          <Label>{tt("Providers")}</Label>
           <AddProviderMenu
             providers={addableProviders}
             onAdd={addProvider}
@@ -382,10 +384,10 @@ export function ModelsSection() {
         {visibleProviders.length === 0 && customEndpoints.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/60 bg-card/40 px-4 py-8 text-center">
             <p className="text-[12px] text-muted-foreground">
-              No providers connected yet.
+              {tt("No providers connected yet.")}
             </p>
             <p className="mt-0.5 text-[10.5px] text-muted-foreground/70">
-              Click "Add provider" to connect a cloud or local model source.
+              {tt('Click "Add provider" to connect a cloud or local model source.')}
             </p>
           </div>
         ) : (
@@ -462,6 +464,7 @@ function AddProviderMenu({
   onAdd: (id: ProviderId) => void;
   onAddCompat: () => void;
 }) {
+  const { tt } = useI18n();
   const cloud = providers.filter((p) => !isLocalProvider(p.id));
   const local = providers.filter(
     (p) => isLocalProvider(p.id) && p.id !== "openai-compatible",
@@ -476,14 +479,14 @@ function AddProviderMenu({
           className="h-7 gap-1.5 px-2.5 text-[11px]"
         >
           <HugeiconsIcon icon={Add01Icon} size={12} strokeWidth={2} />
-          Add provider
+          {tt("Add provider")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-55 p-1">
         {cloud.length > 0 ? (
           <>
             <DropdownMenuLabel className="px-2 text-[10px] tracking-wide text-muted-foreground uppercase">
-              Cloud
+              {tt("Cloud")}
             </DropdownMenuLabel>
             {cloud.map((p) => (
               <ProviderMenuItem key={p.id} provider={p} onAdd={onAdd} />
@@ -491,7 +494,7 @@ function AddProviderMenu({
           </>
         ) : null}
         <DropdownMenuLabel className="px-2 text-[10px] tracking-wide text-muted-foreground uppercase">
-          Local & custom
+          {tt("Local & custom")}
         </DropdownMenuLabel>
         {local.map((p) => (
           <ProviderMenuItem key={p.id} provider={p} onAdd={onAdd} />
@@ -501,7 +504,7 @@ function AddProviderMenu({
           className="flex items-center gap-2 text-[12px]"
         >
           <ProviderIcon provider="openai-compatible" size={13} />
-          <span>OpenAI Compatible</span>
+          <span>{tt("OpenAI Compatible")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -537,11 +540,12 @@ function DefaultsBlock({
   keys: KeysMap;
   customEndpoints: readonly CustomEndpoint[];
 }) {
+  const { tt } = useI18n();
   return (
     <div className="flex flex-col gap-3">
-      <Label>Defaults</Label>
+      <Label>{tt("Defaults")}</Label>
       <div className="flex flex-col gap-2.5 rounded-lg border border-border/60 bg-card/60 px-3 py-2.5">
-        <FieldRow label="Chat model">
+        <FieldRow label={tt("Chat model")}>
           <DefaultModelPicker
             defaultModel={defaultModel}
             configuredIds={configuredIds}
@@ -836,6 +840,7 @@ function LocalProviderCard({
   onClearKey: () => Promise<void>;
   onRemove: () => void;
 }) {
+  const { tt } = useI18n();
   const {
     baseURL,
     modelId,
@@ -885,7 +890,7 @@ function LocalProviderCard({
               size={9}
               strokeWidth={2}
             />
-            Connected
+            {tt("Connected")}
           </Badge>
         ) : null}
         <button
@@ -893,7 +898,7 @@ function LocalProviderCard({
           onClick={() => void openUrl(provider.consoleUrl)}
           className="ml-auto inline-flex items-center gap-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          Docs
+          {tt("Docs")}
           <HugeiconsIcon
             icon={ArrowUpRight01Icon}
             size={11}
@@ -904,7 +909,7 @@ function LocalProviderCard({
           size="icon"
           variant="ghost"
           onClick={onRemove}
-          title="Remove provider"
+          title={tt("Remove provider")}
           className="size-7 text-muted-foreground hover:text-destructive"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.75} />
@@ -937,7 +942,7 @@ function LocalProviderCard({
                 disabled={!urlDraft.trim()}
                 className="h-8 px-3 text-[11px]"
               >
-                Test
+                {tt("Test")}
               </Button>
             </div>
           </FieldRow>
@@ -990,7 +995,7 @@ function LocalProviderCard({
                   size="icon"
                   variant="ghost"
                   onClick={() => void onClearKey()}
-                  title="Remove key"
+                  title={tt("Remove key")}
                   className="size-7 text-muted-foreground hover:text-destructive"
                 >
                   <HugeiconsIcon
@@ -1006,7 +1011,7 @@ function LocalProviderCard({
                   type="password"
                   value={keyDraft}
                   onChange={(e) => setKeyDraft(e.target.value)}
-                  placeholder="Optional — leave empty for unauthenticated endpoints"
+                placeholder={tt("Optional — leave empty for unauthenticated endpoints")}
                   spellCheck={false}
                   className="h-8 flex-1 font-mono text-[11.5px]"
                 />
@@ -1055,6 +1060,7 @@ function CustomEndpointCard({
   onUpdate: (patch: Partial<CustomEndpoint>) => Promise<void>;
   onRemove: () => void;
 }) {
+  const { tt } = useI18n();
   const [expanded, setExpanded] = useState(!endpoint.baseURL.trim());
   const [nameDraft, setNameDraft] = useState(endpoint.name);
   const [urlDraft, setUrlDraft] = useState(endpoint.baseURL);
@@ -1105,7 +1111,7 @@ function CustomEndpointCard({
         />
         <ProviderIcon provider="openai-compatible" size={15} />
         <span className="text-[12.5px] font-medium truncate">
-          {endpoint.name || "OpenAI Compatible"}
+          {endpoint.name || tt("OpenAI Compatible")}
         </span>
         {endpoint.modelId.trim() && (
           <span className="text-[10.5px] text-muted-foreground truncate font-mono">
@@ -1122,7 +1128,7 @@ function CustomEndpointCard({
               size={9}
               strokeWidth={2}
             />
-            Connected
+            {tt("Connected")}
           </Badge>
         ) : null}
         <Button
@@ -1132,7 +1138,7 @@ function CustomEndpointCard({
             e.stopPropagation();
             onRemove();
           }}
-          title="Remove endpoint"
+          title={tt("Remove endpoint")}
           className="ml-auto size-7 text-muted-foreground hover:text-destructive"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.75} />
@@ -1149,7 +1155,7 @@ function CustomEndpointCard({
                 const v = nameDraft.trim();
                 if (v !== endpoint.name) void onUpdate({ name: v });
               }}
-              placeholder="My endpoint"
+              placeholder={tt("My endpoint")}
               spellCheck={false}
               className="h-8 flex-1 text-[11.5px]"
             />
@@ -1175,7 +1181,7 @@ function CustomEndpointCard({
                 disabled={!urlDraft.trim()}
                 className="h-8 px-3 text-[11px]"
               >
-                Test
+                {tt("Test")}
               </Button>
             </div>
           </FieldRow>
@@ -1188,7 +1194,7 @@ function CustomEndpointCard({
                 const v = modelDraft.trim();
                 if (v !== endpoint.modelId) void onUpdate({ modelId: v });
               }}
-              placeholder="gpt-4o, qwen3-max, glm-4.6, …"
+              placeholder={tt("gpt-4o, qwen3-max, glm-4.6, …")}
               spellCheck={false}
               className="h-8 font-mono text-[11.5px]"
             />
@@ -1210,7 +1216,7 @@ function CustomEndpointCard({
                 className="h-8 w-28 font-mono text-[11.5px]"
               />
               <span className="text-[10.5px] text-muted-foreground">
-                tokens
+                {tt("tokens")}
               </span>
             </div>
           </FieldRow>
@@ -1225,7 +1231,7 @@ function CustomEndpointCard({
                   size="icon"
                   variant="ghost"
                   onClick={() => void onClearKey()}
-                  title="Remove key"
+                  title={tt("Remove key")}
                   className="size-7 text-muted-foreground hover:text-destructive"
                 >
                   <HugeiconsIcon
@@ -1241,7 +1247,7 @@ function CustomEndpointCard({
                   type="password"
                   value={keyDraft}
                   onChange={(e) => setKeyDraft(e.target.value)}
-                  placeholder="Optional — leave empty for unauthenticated endpoints"
+              placeholder={tt("Optional — leave empty for unauthenticated endpoints")}
                   spellCheck={false}
                   className="h-8 flex-1 font-mono text-[11.5px]"
                 />
@@ -1256,7 +1262,7 @@ function CustomEndpointCard({
                   disabled={!keyDraft.trim()}
                   className="h-8 px-3 text-[11px]"
                 >
-                  Save
+                  {tt("Save")}
                 </Button>
               </div>
             )}

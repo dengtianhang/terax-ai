@@ -29,8 +29,10 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useMemo, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
+import { useI18n } from "@/lib/i18n";
 
 export function ShortcutsSection() {
+  const { t, tt } = useI18n();
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
   const [search, setSearch] = useState("");
   const [recordingId, setRecordingId] = useState<ShortcutId | null>(null);
@@ -74,8 +76,8 @@ export function ShortcutsSection() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <SectionHeader
-          title="Shortcuts"
-          description="View and customize keyboard shortcuts."
+          title={t("settings.shortcuts")}
+          description={t("settings.shortcutsDescription")}
         />
         <Button
           variant="outline"
@@ -88,7 +90,7 @@ export function ShortcutsSection() {
             size={12}
             strokeWidth={2}
           />
-          Reset All
+          {tt("Reset All")}
         </Button>
       </div>
 
@@ -100,7 +102,7 @@ export function ShortcutsSection() {
           className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          placeholder="Search shortcuts..."
+          placeholder={tt("Search shortcuts...")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 pl-9 text-[12.5px]"
@@ -147,12 +149,12 @@ export function ShortcutsSection() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tt("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={onResetAll}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Reset All
+              {tt("Reset All")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -180,6 +182,7 @@ function ShortcutRow({
   onReset: () => void;
   userBindings?: KeyBinding[];
 }) {
+  const { tt } = useI18n();
   const bindings =
     userBindings !== undefined ? userBindings : shortcut.defaultBindings;
   const isModified = userBindings !== undefined;
@@ -225,7 +228,7 @@ function ShortcutRow({
                   size="icon"
                   className="size-7 text-muted-foreground hover:text-foreground"
                   onClick={onReset}
-                  title="Reset to default"
+              title={tt("Reset to default")}
                 >
                   <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} />
                 </Button>
@@ -235,7 +238,7 @@ function ShortcutRow({
                 size="icon"
                 className="size-7 text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={onClear}
-                title="Clear shortcut"
+              title={tt("Clear shortcut")}
               >
                 <HugeiconsIcon icon={Delete02Icon} size={12} />
               </Button>

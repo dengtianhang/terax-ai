@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export function LspInstallDialog({ server, onClose }: Props) {
+  const { tt } = useI18n();
   const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -81,7 +83,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
               type="button"
               className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => void copyInstallCommand()}
-              title="Copy install command"
+              title={tt("Copy install command")}
             >
               <HugeiconsIcon
                 icon={copied ? Tick02Icon : Copy01Icon}
@@ -114,7 +116,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
                 void openUrl(server.install?.docsUrl ?? "").catch(console.error)
               }
             >
-              Documentation
+              {tt("Documentation")}
             </Button>
           ) : (
             <span />
@@ -130,7 +132,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
               strokeWidth={1.9}
               className={checking ? "animate-spin" : undefined}
             />
-            {checking ? "Checking..." : "Check again"}
+            {checking ? tt("Checking...") : tt("Check again")}
           </Button>
         </DialogFooter>
       </DialogContent>

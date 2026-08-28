@@ -1,5 +1,5 @@
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { messages, type Locale } from "./resources";
+import { messages, textMessages, type Locale } from "./resources";
 
 export { DEFAULT_LOCALE, type Locale } from "./resources";
 export type MessageKey =
@@ -15,6 +15,12 @@ export type MessageKey =
   | "settings.zoom"
   | "settings.explorer"
   | "settings.terminal"
+  | "settings.editorDescription"
+  | "settings.themesDescription"
+  | "settings.shortcutsDescription"
+  | "settings.modelsDescription"
+  | "settings.agentsDescription"
+  | "settings.aboutDescription"
   | "settings.language"
   | "settings.languageDescription"
   | "settings.chinese"
@@ -41,7 +47,15 @@ export function getMessage(locale: Locale, key: string): string {
   return messages[locale]?.[key as MessageKey] ?? messages["en-US"]?.[key as MessageKey] ?? key;
 }
 
+export function getText(locale: Locale, text: string): string {
+  return textMessages[locale]?.[text] ?? text;
+}
+
 export function useI18n() {
   const locale = usePreferencesStore((state) => state.locale);
-  return { locale, t: (key: MessageKey) => getMessage(locale, key) };
+  return {
+    locale,
+    t: (key: MessageKey) => getMessage(locale, key),
+    tt: (text: string) => getText(locale, text),
+  };
 }

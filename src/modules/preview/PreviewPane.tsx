@@ -1,5 +1,6 @@
 import { Alert02Icon, Globe02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useI18n } from "@/lib/i18n";
 import {
   forwardRef,
   useEffect,
@@ -30,6 +31,7 @@ const SUSPEND_AFTER_MS = 30_000;
 
 export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(
   function PreviewPane({ url, visible, onUrlChange }, ref) {
+    const { tt } = useI18n();
     // `nonce` is part of the iframe `key`. Bumping it remounts the iframe,
     // which is the only reliable cross-origin reload (calling
     // contentWindow.location.reload() throws on cross-origin frames).
@@ -101,7 +103,7 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(
               <iframe
                 key={`${url}#${nonce}`}
                 src={url}
-                title="Preview"
+                title={tt("Preview")}
                 className="h-full w-full border-0"
                 // sandbox grants the bare minimum for a dev preview: scripts,
                 // same-origin (cookies/storage for the previewed app), forms,

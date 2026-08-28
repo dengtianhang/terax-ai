@@ -7,6 +7,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import {
   native,
   type GitCommitFileChange,
@@ -194,6 +195,7 @@ export function GitHistoryPane({
   onOpenCommitFile,
   onSearchHandle,
 }: Props) {
+  const { tt } = useI18n();
   const [commits, setCommits] = useState<GitLogEntry[]>([]);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -511,26 +513,26 @@ export function GitHistoryPane({
           <CenterPlaceholder>
             <Spinner className="size-4" />
             <span className="text-[11.5px] text-muted-foreground">
-              Loading commits…
+              {tt("Loading commits…")}
             </span>
           </CenterPlaceholder>
         ) : loadStatus === "error" && commits.length === 0 ? (
           <CenterPlaceholder>
             <div className="text-[13px] font-medium">
-              Could not load history
+              {tt("Could not load history")}
             </div>
             <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
               {error ?? "Unknown error"}
             </div>
             <Button size="sm" onClick={handleRefresh}>
-              Retry
+              {tt("Retry")}
             </Button>
           </CenterPlaceholder>
         ) : commits.length === 0 ? (
           <CenterPlaceholder>
-            <div className="text-[13px] font-medium">No commits yet</div>
+            <div className="text-[13px] font-medium">{tt("No commits yet")}</div>
             <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
-              This branch has no commits.
+              {tt("This branch has no commits.")}
             </div>
           </CenterPlaceholder>
         ) : (
@@ -594,17 +596,17 @@ export function GitHistoryPane({
               {loadStatus === "more" ? (
                 <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-muted-foreground">
                   <Spinner className="size-3" />
-                  Loading more…
+                  {tt("Loading more…")}
                 </div>
               ) : null}
               {endReached && !activeSearch ? (
                 <div className="py-3 text-center text-[10.5px] text-muted-foreground/65">
-                  End of history
+                  {tt("End of history")}
                 </div>
               ) : null}
               {loadStatus === "error" && commits.length > 0 ? (
                 <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-destructive">
-                  {error ?? "Failed to load more"}
+                  {error ?? tt("Failed to load more")}
                   <Button
                     size="xs"
                     variant="ghost"
@@ -825,6 +827,7 @@ function CommitDetail({
   onOpenFile,
   onRetryFiles,
 }: CommitDetailProps) {
+  const { tt } = useI18n();
   const absolute = absoluteTime(commit.timestampSecs);
   const webUrl = remoteWeb ? commitWebUrl(remoteWeb, commit.sha) : null;
   const [copied, setCopied] = useState(false);
@@ -873,7 +876,7 @@ function CommitDetail({
             }}
           >
             <HugeiconsIcon icon={Copy01Icon} size={11} strokeWidth={1.9} />
-            {copied ? "Copied" : "Copy SHA"}
+            {copied ? tt("Copied") : tt("Copy SHA")}
           </Button>
           {webUrl ? (
             <Button
@@ -919,6 +922,7 @@ function CommitFiles({
   ) => Promise<void> | void;
   onRetry: () => void;
 }) {
+  const { tt } = useI18n();
   if (!filesEntry || filesEntry.state === "loading") {
     return (
       <div className="flex items-center gap-2 px-3 py-3 text-[11px] text-muted-foreground">
@@ -937,7 +941,7 @@ function CommitFiles({
           className="h-6 cursor-pointer text-[11px]"
           onClick={onRetry}
         >
-          Retry
+          {tt("Retry")}
         </Button>
       </div>
     );
@@ -945,14 +949,14 @@ function CommitFiles({
   if (filesEntry.files.length === 0) {
     return (
       <div className="px-3 py-3 text-[11px] text-muted-foreground">
-        No file changes.
+        {tt("No file changes.")}
       </div>
     );
   }
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/85">
-        <span>Files</span>
+        <span>{tt("Files")}</span>
         <span className="rounded-sm bg-muted/55 px-1 py-px text-[9.5px] tabular-nums text-muted-foreground/85 normal-case tracking-normal">
           {filesEntry.files.length}
         </span>

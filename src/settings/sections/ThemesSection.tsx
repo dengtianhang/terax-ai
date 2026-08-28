@@ -46,9 +46,11 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
+import { useI18n } from "@/lib/i18n";
 import { SettingRow } from "../components/SettingRow";
 
 export function ThemesSection() {
+  const { t, tt } = useI18n();
   const { themeId, setThemeId, resolvedMode, customThemes } = useTheme();
   const builtinThemes = listBuiltinThemes();
   const themes = useMemo(
@@ -156,8 +158,8 @@ export function ThemesSection() {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
-        title="Themes"
-        description="Theme, background image, and customization."
+        title={t("settings.themes")}
+        description={t("settings.themesDescription")}
       />
 
       {backdrop === "none" ? null : (
@@ -189,7 +191,7 @@ export function ThemesSection() {
         }}
       >
         <div className="flex items-center justify-between">
-          <Label>Theme</Label>
+          <Label>{tt("Theme")}</Label>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -198,7 +200,7 @@ export function ThemesSection() {
               onClick={onCreateTheme}
             >
               <HugeiconsIcon icon={PlusSignIcon} size={11} strokeWidth={2} />
-              Create
+              {tt("Create")}
             </Button>
             <Button
               variant="outline"
@@ -314,7 +316,7 @@ export function ThemesSection() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
-            <Label>Editor theme</Label>
+        <Label>{tt("Editor theme")}</Label>
             <span className="text-[11px] text-muted-foreground">
               Syntax colors for the code editor. Auto follows the app theme.
             </span>
@@ -365,7 +367,7 @@ export function ThemesSection() {
         }}
       >
         <div className="flex items-center justify-between">
-          <Label>Background</Label>
+        <Label>{tt("Background")}</Label>
           <div className="flex items-center gap-2">
             {backgroundKind === "image" && backgroundImageId ? (
               <Button

@@ -5,8 +5,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { useShortcutLabel } from "@/modules/shortcuts";
 import { labelFor, type Tab, TabIcon } from "@/modules/tabs";
+import { DEFAULT_SPACE_ID } from "@/modules/tabs/lib/useTabs";
 import {
   ArrowDown01Icon,
   ArrowRight01Icon,
@@ -58,6 +60,15 @@ type DropTarget =
   | { kind: "tab"; tabId: number; edge: Edge }
   | { kind: "into-space"; spaceId: string };
 
+function displaySpaceName(
+  space: Pick<SpaceMeta, "id" | "name">,
+  tt: (text: string) => string,
+): string {
+  return space.id === DEFAULT_SPACE_ID && space.name === "Default"
+    ? tt("Default")
+    : space.name;
+}
+
 function subtitleFor(tab: Tab): string | null {
   if (tab.kind === "terminal") {
     if (!tab.cwd) return null;
@@ -84,6 +95,7 @@ export function SpaceSwitcher({
   onReorderTab,
   onReorderSpaces,
 }: Props) {
+  const { tt } = useI18n();
   const spaces = useSpaces((s) => s.spaces);
   const activeId = useSpaces((s) => s.activeId);
   const setActive = useSpaces((s) => s.setActive);
@@ -240,11 +252,11 @@ export function SpaceSwitcher({
       <PopoverTrigger asChild>
         <button
           type="button"
-          title={shortcut ? `Spaces · ${shortcut}` : "Spaces"}
+          title={shortcut ? `${tt("Spaces")} · ${shortcut}` : tt("Spaces")}
           className="flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-muted-foreground/90 outline-none transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
         >
           <span className="max-w-36 truncate text-xs font-medium">
-            {current.name}
+            {displaySpaceName(current, tt)}
           </span>
           <HugeiconsIcon
             icon={ArrowRight01Icon}
@@ -256,7 +268,7 @@ export function SpaceSwitcher({
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={6} className="w-[20rem] p-1.5">
         <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0.5">
-          <span className="text-xs font-semibold text-foreground">Spaces</span>
+          <span className="text-xs font-semibold text-foreground">{tt("Spaces")}</span>
           {shortcut && (
             <Kbd className="h-5 bg-muted/70 text-[10px]">{shortcut}</Kbd>
           )}
@@ -305,7 +317,7 @@ export function SpaceSwitcher({
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
             <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={1.75} />
-            <span className="flex-1">New space</span>
+            <span className="flex-1">{tt("New space")}</span>
           </button>
         </div>
       </PopoverContent>
@@ -382,6 +394,7 @@ function SpaceRow({
   onJumpTab,
   onCloseTab,
 }: SpaceRowProps) {
+  const { tt } = useI18n();
   const isDragging = dragging?.kind === "space" && dragging.id === space.id;
   const moveTarget = drop?.kind === "into-space" && drop.spaceId === space.id;
   const reorderEdge =
@@ -442,7 +455,7 @@ function SpaceRow({
           />
         ) : (
           <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-            {space.name}
+            {displaySpaceName(space, tt)}
           </span>
         )}
         {!editing && (
@@ -522,6 +535,7 @@ function TabRow({
   onJump: () => void;
   onClose: () => void;
 }) {
+  const { tt } = useI18n();
   const subtitle = subtitleFor(tab);
   const isDragging = dragging?.kind === "tab" && dragging.id === tab.id;
   const reorderEdge =
@@ -569,7 +583,7 @@ function TabRow({
             e.stopPropagation();
             onClose();
           }}
-          aria-label="Close tab"
+          aria-label={tt("Close tab")}
           className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/tab:opacity-70 hover:opacity-100"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />

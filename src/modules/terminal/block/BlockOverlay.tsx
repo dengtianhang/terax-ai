@@ -5,6 +5,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { useChatStore } from "@/modules/ai/store/chatStore";
 import {
   ArrowDown01Icon,
@@ -189,6 +190,7 @@ function StickyHeader({ block, all, onSearch }: ChromeProps) {
 }
 
 function Toolbar({ block, all, onSearch }: ChromeProps) {
+  const { tt } = useI18n();
   const duration = block.running
     ? null
     : fmtDuration(block.finishedAt - block.startedAt);
@@ -200,7 +202,7 @@ function Toolbar({ block, all, onSearch }: ChromeProps) {
       {!block.running && !!block.command && (
         <button
           type="button"
-          title="Run again"
+          title={tt("Run again")}
           className="bt-btn"
           disabled={!all.promptReady}
           onClick={() => all.onRunAgain(block.command)}
@@ -214,6 +216,7 @@ function Toolbar({ block, all, onSearch }: ChromeProps) {
 }
 
 function BlockMenu({ block, all, onSearch }: ChromeProps) {
+  const { tt } = useI18n();
   const output = () => all.readOutput(block.id) ?? "";
   const attach = () => {
     const out = capAttachOutput(output());
@@ -223,7 +226,7 @@ function BlockMenu({ block, all, onSearch }: ChromeProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" title="Block actions" className="bt-btn">
+        <button type="button" title={tt("Block actions")} className="bt-btn">
           <HugeiconsIcon
             icon={MoreHorizontalIcon}
             size={14}
@@ -241,40 +244,40 @@ function BlockMenu({ block, all, onSearch }: ChromeProps) {
       >
         <MenuItem
           icon={Refresh01Icon}
-          label="Run again"
+          label={tt("Run again")}
           disabled={block.running || !all.promptReady || !block.command}
           onClick={() => all.onRunAgain(block.command)}
         />
         <MenuItem
           icon={Copy01Icon}
-          label="Copy command"
+          label={tt("Copy command")}
           disabled={!block.command}
-          onClick={() => copy(block.command, "Command copied")}
+          onClick={() => copy(block.command, tt("Command copied"))}
         />
         <MenuItem
           icon={ComputerTerminal02Icon}
-          label="Copy output"
+          label={tt("Copy output")}
           onClick={() => {
             const o = output();
-            if (o) copy(o, "Output copied");
+            if (o) copy(o, tt("Output copied"));
           }}
         />
         <MenuItem
           icon={Copy01Icon}
-          label="Copy command and output"
+          label={tt("Copy command and output")}
           onClick={() => {
             const text = `$ ${block.command}\n${output()}`;
-            copy(text, "Block copied");
+            copy(text, tt("Block copied"));
           }}
         />
         <MenuItem
           icon={SparklesIcon}
-          label="Attach to AI chat"
+          label={tt("Attach to AI chat")}
           onClick={attach}
         />
         <MenuItem
           icon={Search01Icon}
-          label="Find in block"
+          label={tt("Find in block")}
           onClick={() => onSearch(block.id)}
         />
       </DropdownMenuContent>
@@ -293,6 +296,7 @@ function MenuItem({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const { tt } = useI18n();
   return (
     <DropdownMenuItem
       disabled={disabled}
@@ -300,7 +304,7 @@ function MenuItem({
       className="gap-2 text-xs"
     >
       <HugeiconsIcon icon={icon} size={13} strokeWidth={1.75} />
-      {label}
+      {tt(label)}
     </DropdownMenuItem>
   );
 }
@@ -318,6 +322,7 @@ function SearchBar({
   revealMatch: (m: BlockMatch) => void;
   onClose: () => void;
 }) {
+  const { tt } = useI18n();
   const [matches, setMatches] = useState<BlockMatch[]>([]);
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -345,7 +350,7 @@ function SearchBar({
       <input
         ref={inputRef}
         className="bt-search-input"
-        placeholder="Find in block"
+        placeholder={tt("Find in block")}
         onChange={(e) => run(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -361,12 +366,12 @@ function SearchBar({
         {matches.length ? `${idx + 1}/${matches.length}` : "0"}
       </span>
       <SearchBtn
-        title="Previous"
+        title={tt("Previous")}
         icon={ArrowUp01Icon}
         onClick={() => nav(-1)}
       />
-      <SearchBtn title="Next" icon={ArrowDown01Icon} onClick={() => nav(1)} />
-      <SearchBtn title="Close" icon={Cancel01Icon} onClick={onClose} />
+      <SearchBtn title={tt("Next")} icon={ArrowDown01Icon} onClick={() => nav(1)} />
+      <SearchBtn title={tt("Close")} icon={Cancel01Icon} onClick={onClose} />
     </div>
   );
 }

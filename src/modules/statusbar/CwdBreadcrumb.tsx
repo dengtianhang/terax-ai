@@ -22,10 +22,10 @@ import {
   MoreHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useI18n } from "@/lib/i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 import { segmentsFromCwd } from "./lib/pathUtils";
-import { useI18n } from "@/lib/i18n";
 
 type Props = {
   cwd: string | null;
@@ -259,6 +259,7 @@ function CollapsedSegments({
   segments: { fullPath: string; label: string; isHome: boolean }[];
   onCd: (p: string) => void;
 }) {
+  const { tt } = useI18n();
   return (
     <span className="contents md:hidden">
       <BreadcrumbItem>
@@ -266,7 +267,7 @@ function CollapsedSegments({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              title="Show hidden folders"
+              title={tt("Show hidden folders")}
               className="flex items-center rounded-sm px-1 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <HugeiconsIcon

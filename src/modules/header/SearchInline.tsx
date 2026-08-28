@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { KEY_SEP } from "@/lib/platform";
+import { useI18n } from "@/lib/i18n";
 import type { EditorPaneHandle } from "@/modules/editor";
 import { usePreferencesStore } from "@/modules/settings/preferences";
 import { getBindingTokens, SHORTCUTS } from "@/modules/shortcuts/shortcuts";
@@ -44,6 +45,7 @@ type Props = {
 
 export const SearchInline = forwardRef<SearchInlineHandle, Props>(
   function SearchInline({ target, compact }, ref) {
+    const { tt } = useI18n();
     const [q, setQ] = useState("");
     // In compact mode the field is hidden behind an icon until activated.
     // In normal mode the field is always present.
@@ -68,7 +70,7 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(
       return tokens.join(KEY_SEP);
     }, [userShortcuts]);
 
-    const baseLabel = target?.kind === "git-history" ? "Git search" : "Search";
+    const baseLabel = target?.kind === "git-history" ? tt("Git search") : tt("Search");
 
     const placeholder = useMemo(() => {
       return shortcutText ? `${baseLabel} (${shortcutText})` : baseLabel;
@@ -182,7 +184,7 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(
                   inputRef.current?.focus();
                 }}
                 className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Clear search"
+                aria-label={tt("Clear search")}
               >
                 <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
               </button>

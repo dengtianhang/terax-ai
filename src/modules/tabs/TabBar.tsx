@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { AgentIcon } from "@/modules/agents/lib/agentIcon";
 import type { AgentLaunchRequest } from "@/modules/agents/lib/launcher";
 import {
@@ -101,6 +102,7 @@ export function TabBar({
   onOverrideLanguage,
   compact,
 }: Props) {
+  const { tt } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -407,7 +409,7 @@ export function TabBar({
                               alt=""
                             />
                             <div className="flex flex-1 flex-col">
-                              <span>Auto Detect</span>
+                              <span>{tt("Auto Detect")}</span>
                               <span className="text-[10px] text-muted-foreground italic">
                                 Mode: {resolveDisplayName(t.title)}
                               </span>
@@ -472,14 +474,14 @@ export function TabBar({
                     </span>
                     {t.kind === "editor" && t.dirty ? (
                       <span
-                        aria-label="Unsaved changes"
+                        aria-label={tt("Unsaved changes")}
                         className="size-1.5 shrink-0 rounded-full bg-foreground/70"
                       />
                     ) : null}
                   </span>
                     <span
                       role="button"
-                      aria-label="Close tab"
+                      aria-label={tt("Close tab")}
                       data-no-drag
                       onPointerDown={(e) => {
                         e.preventDefault();
@@ -526,7 +528,6 @@ export function TabBar({
                           />
                           <span className="flex-1">Rename</span>
                         </ContextMenuItem>
-                          <>
                             <ContextMenuSeparator />
                             <ContextMenuItem
                               className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
@@ -736,6 +737,7 @@ function TabRenameInput({
   onCommit: (value: string) => void;
   onCancel: () => void;
 }) {
+  const { tt } = useI18n();
   const ref = useRef<HTMLInputElement>(null);
   // Guards against a trailing blur re-resolving an edit that Enter/Escape
   // already finished (Escape must never commit).
@@ -769,7 +771,7 @@ function TabRenameInput({
     <input
       ref={ref}
       defaultValue={initial}
-      aria-label="Rename tab"
+      aria-label={tt("Rename tab")}
       className={cn(
         "w-28 min-w-0 rounded-sm bg-background px-1 text-xs text-foreground",
         "outline-none ring-1 ring-border focus:ring-ring",

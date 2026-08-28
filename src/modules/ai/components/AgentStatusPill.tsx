@@ -1,4 +1,5 @@
 import { Spinner } from "@/components/ui/spinner";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { AlertCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function AgentStatusPill({ onClick }: Props) {
+  const { tt } = useI18n();
   const meta = useChatStore((s) => s.agentMeta);
 
   // awaiting-approval is surfaced by the notification + auto-opened mini window.
@@ -27,7 +29,7 @@ export function AgentStatusPill({ onClick }: Props) {
         "animate-in fade-in-0 slide-in-from-top-1 duration-150 ease-out",
         tone,
       )}
-      title="Open AI log"
+      title={tt("Open AI log")}
     >
       {icon}
       <span className="max-w-[180px] truncate">{label}</span>

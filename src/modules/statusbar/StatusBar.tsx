@@ -18,6 +18,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { CwdBreadcrumb } from "./CwdBreadcrumb";
 import { DiagnosticsBadge } from "./DiagnosticsBadge";
 import { WorkspaceEnvSelector } from "./WorkspaceEnvSelector";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { RecentDirectory } from "@/modules/workspace";
 
 type Props = {
   cwd: string | null;
@@ -26,6 +34,9 @@ type Props = {
   onCd: (path: string) => void;
   onWorkspaceChange: (env: WorkspaceEnv) => void;
   onChooseDirectory: () => void;
+  recentDirectories: RecentDirectory[];
+  onChooseRecentDirectory: (path: string) => void;
+  onRemoveRecentDirectory: (path: string) => void;
   onOpenMini: () => void;
   /** Opens the panel, or Settings > Models when no API key is loaded. */
   onOpenAi: () => void;
@@ -41,27 +52,60 @@ export function StatusBar({
   onCd,
   onWorkspaceChange,
   onChooseDirectory,
+  recentDirectories,
+  onChooseRecentDirectory,
+  onRemoveRecentDirectory,
   onOpenMini,
   onOpenAi,
   hasComposer,
   privateActive,
 }: Props) {
   const panelOpen = useChatStore((s) => s.panelOpen);
-  const { t } = useI18n();
+  const { t, tt } = useI18n();
 
   return (
     <footer className="flex h-8 shrink-0 items-center justify-between gap-3 pl-3 pr-4 text-[11px]">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <WorkspaceEnvSelector onSelect={onWorkspaceChange} />
-        <button
-          type="button"
-          title={t("workspace.selectDirectory")}
-          onClick={onChooseDirectory}
-          className="flex h-6 shrink-0 items-center gap-1 rounded-sm px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <HugeiconsIcon icon={Folder01Icon} size={13} strokeWidth={1.75} />
-          <span className="hidden sm:inline">{t("workspace.selectDirectory")}</span>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              title={t("workspace.selectDirectory")}
+              className="flex h-6 shrink-0 items-center gap-1 rounded-sm px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <HugeiconsIcon icon={Folder01Icon} size={13} strokeWidth={1.75} />
+              <span className="hidden sm:inline">{t("workspace.selectDirectory")}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-80">
+            <DropdownMenuItem onSelect={onChooseDirectory}>
+              {t("workspace.selectDirectory")}
+            </DropdownMenuItem>
+            {recentDirectories.length > 0 ? <DropdownMenuSeparator /> : null}
+            {recentDirectories.map((entry) => (
+              <DropdownMenuItem
+                key={entry.path}
+                className="group/recent max-w-80"
+                onSelect={() => onChooseRecentDirectory(entry.path)}
+              >
+                <span className="min-w-0 flex-1 truncate" title={entry.path}>{entry.path}</span>
+                <button
+                  type="button"
+                  className="ml-auto hidden shrink-0 rounded px-1 text-muted-foreground hover:bg-accent hover:text-foreground group-hover/recent:block"
+                  title="移除"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemoveRecentDirectory(entry.path);
+                  }}
+                >
+                  ×
+                </button>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
         <LspStatusPill filePath={filePath ?? null} />
         <DiagnosticsBadge filePath={filePath ?? null} />
@@ -70,15 +114,14 @@ export function StatusBar({
             <TooltipTrigger asChild>
               <span className="flex shrink-0 cursor-default items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10.5px] font-medium text-amber-700 dark:text-amber-400">
                 <HugeiconsIcon icon={IncognitoIcon} size={11} strokeWidth={2} />
-                <span>Private: hidden from AI</span>
+                <span>{tt("Private: hidden from AI")}</span>
               </span>
             </TooltipTrigger>
             <TooltipContent
               side="top"
               className="max-w-64 text-[11px] leading-relaxed"
             >
-              AI can't see this terminal's output. Use it for secrets, SSH, or
-              anything you don't want sent to the model.
+              {tt("AI can't see this terminal's output. Use it for secrets, SSH, or anything you don't want sent to the model.")}
             </TooltipContent>
           </Tooltip>
         ) : null}

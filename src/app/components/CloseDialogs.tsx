@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { setConfirmCloseRunningTerminal } from "@/modules/settings/store";
 import type { Tab } from "@/modules/tabs";
+import { useI18n } from "@/lib/i18n";
 import { useId, useState } from "react";
 
 type Props = {
@@ -60,6 +61,7 @@ function OptOutRow({
   checked: boolean;
   onCheckedChange: (value: boolean) => void;
 }) {
+  const { tt } = useI18n();
   const id = useId();
   return (
     <div className="-mt-3 flex items-center justify-center gap-2 sm:justify-start">
@@ -72,7 +74,7 @@ function OptOutRow({
         htmlFor={id}
         className="font-normal text-[12px] text-muted-foreground"
       >
-        Don't ask again about running processes
+        {tt("Don't ask again about running processes")}
       </Label>
     </div>
   );
@@ -136,6 +138,7 @@ export function CloseDialogs({
   onCancelAppClose,
   onConfirmAppClose,
 }: Props) {
+  const { tt } = useI18n();
   const [optOutTerminalClose, setOptOutTerminalClose] = useState(false);
   const [optOutAppClose, setOptOutAppClose] = useState(false);
   const appCloseCanOptOut =
@@ -173,7 +176,7 @@ export function CloseDialogs({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogTitle>{tt("Unsaved Changes")}</AlertDialogTitle>
             <AlertDialogDescription>
               {tabs.find((t) => t.id === pendingCloseTab)?.title
                 ? `"${
@@ -184,10 +187,10 @@ export function CloseDialogs({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={onCancelClose}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmClose}>
-              Close Anyway
+              {tt("Close Anyway")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -199,9 +202,9 @@ export function CloseDialogs({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Close Terminal?</AlertDialogTitle>
+            <AlertDialogTitle>{tt("Close Terminal?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              A process is running. Closing this tab will terminate it.
+              {tt("A process is running. Closing this tab will terminate it.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <OptOutRow
@@ -210,10 +213,10 @@ export function CloseDialogs({
           />
           <AlertDialogFooter>
             <AlertDialogCancel onClick={cancelTerminalClose}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmTerminalClose}>
-              Close Anyway
+              {tt("Close Anyway")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -225,7 +228,7 @@ export function CloseDialogs({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogTitle>{tt("Unsaved Changes")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDeleteTabs?.length === 1
                 ? (() => {
@@ -241,10 +244,10 @@ export function CloseDialogs({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={onCancelDeleteClose}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDeleteClose}>
-              Close Anyway
+              {tt("Close Anyway")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -258,8 +261,8 @@ export function CloseDialogs({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {pendingCloseMany?.kind === "right"
-                ? "Close Tabs to the Right"
-                : "Close Other Tabs"}
+                ? tt("Close Tabs to the Right")
+                : tt("Close Other Tabs")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pendingCloseMany ? closeManyMessage(pendingCloseMany, tabs) : ""}
@@ -267,7 +270,7 @@ export function CloseDialogs({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={onCancelCloseMany}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={closeManyConfirming}
@@ -276,7 +279,7 @@ export function CloseDialogs({
                 onConfirmCloseMany();
               }}
             >
-              {closeManyConfirming ? "Checking..." : "Close Anyway"}
+              {closeManyConfirming ? tt("Checking...") : tt("Close Anyway")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -288,7 +291,7 @@ export function CloseDialogs({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Quit Terax?</AlertDialogTitle>
+            <AlertDialogTitle>{tt("Quit Terax?")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingAppClose ? appCloseMessage(pendingAppClose) : ""}
             </AlertDialogDescription>
@@ -301,10 +304,10 @@ export function CloseDialogs({
           ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={cancelAppClose}>
-              Cancel
+              {tt("Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => void confirmAppClose()}>
-              Quit Anyway
+              {tt("Quit Anyway")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

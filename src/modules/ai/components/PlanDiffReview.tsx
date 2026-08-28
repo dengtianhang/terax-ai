@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import {
   ArrowDown01Icon,
   Cancel01Icon,
@@ -105,6 +106,7 @@ function PlanRow({
   item: QueuedEdit;
   onReject: () => void;
 }) {
+  const { tt } = useI18n();
   const [open, setOpen] = useState(false);
   const isDir = item.kind === "create_directory";
   const isNew = item.isNewFile && !isDir;
@@ -129,7 +131,7 @@ function PlanRow({
             open && "rotate-180",
             isDir && "invisible",
           )}
-          aria-label="Toggle diff"
+          aria-label={tt("Toggle diff")}
         >
           <HugeiconsIcon icon={ArrowDown01Icon} size={11} strokeWidth={1.75} />
         </button>
@@ -146,7 +148,7 @@ function PlanRow({
             </span>
             {isNew ? (
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                new
+                {tt("new")}
               </span>
             ) : null}
           </div>
@@ -175,7 +177,7 @@ function PlanRow({
           variant="ghost"
           className="size-5 shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100"
           onClick={onReject}
-          aria-label="Reject"
+          aria-label={tt("Reject")}
         >
           <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={1.75} />
         </Button>
@@ -199,6 +201,7 @@ function UnifiedDiffPreview({
   original: string;
   proposed: string;
 }) {
+  const { tt } = useI18n();
   // Coarse line-level diff (LCS-lite via set membership). For real diffs
   // we'd reach for a library; this is good enough for at-a-glance review.
   const a = original.split("\n");
@@ -215,7 +218,7 @@ function UnifiedDiffPreview({
   if (lines.length === 0) {
     return (
       <div className="text-[11px] italic text-muted-foreground">
-        no line-level changes
+        {tt("no line-level changes")}
       </div>
     );
   }

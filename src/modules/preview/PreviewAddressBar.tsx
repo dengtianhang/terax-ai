@@ -13,6 +13,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useI18n } from "@/lib/i18n";
 import {
   forwardRef,
   useEffect,
@@ -59,6 +60,7 @@ type Props = {
 
 export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
   function PreviewAddressBar({ url, onSubmit, onReload }, ref) {
+    const { tt } = useI18n();
     const [draft, setDraft] = useState(url);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -117,7 +119,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           variant="ghost"
           size="icon"
           onClick={onReload}
-          title="Reload"
+          title={tt("Reload")}
           className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <HugeiconsIcon
@@ -132,7 +134,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
               type="button"
               variant="ghost"
               size="sm"
-              title="Common dev-server ports"
+              title={tt("Common dev-server ports")}
               className="h-7 shrink-0 gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <HugeiconsIcon
@@ -140,7 +142,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
                 size={13}
                 strokeWidth={1.75}
               />
-              <span className="hidden sm:inline">Ports</span>
+              <span className="hidden sm:inline">{tt("Ports")}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -167,7 +169,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           <Input
             ref={inputRef}
             value={draft}
-            placeholder="http://localhost:3000"
+            placeholder={tt("http://localhost:3000")}
             spellCheck={false}
             autoComplete="off"
             className="h-7 w-full bg-muted/60 px-2 text-xs placeholder:text-muted-foreground/70 focus-visible:ring-0"
@@ -191,7 +193,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           onClick={() => {
             if (url) void openUrl(url).catch(console.error);
           }}
-          title="Open in system browser"
+          title={tt("Open in system browser")}
           className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           disabled={!url}
         >

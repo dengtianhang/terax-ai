@@ -19,6 +19,7 @@ import { redetectBinary } from "../lib/detect";
 import type { LspPreset } from "../lib/presets";
 import { restartPresetSessions } from "../lib/sessionManager";
 import { useLspHint } from "../lib/useLspHint";
+import { useI18n } from "@/lib/i18n";
 
 type Props = {
   filePath: string | null;
@@ -28,6 +29,7 @@ const PILL_CLASS =
   "terax-pill-in ml-1.5 flex h-6 shrink-0 cursor-pointer [&_button]:cursor-pointer items-center gap-1 rounded-full border border-border/50 bg-accent/50 px-2 text-[10.5px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground";
 
 export function LspStatusPill({ filePath }: Props) {
+  const { tt } = useI18n();
   const hint = useLspHint(filePath);
   if (!hint) return null;
 
@@ -41,7 +43,7 @@ export function LspStatusPill({ filePath }: Props) {
           title={`Start ${hint.preset.command} for this workspace`}
         >
           <HugeiconsIcon icon={SourceCodeIcon} size={11} strokeWidth={2} />
-          <span>Enable {hint.preset.name} LSP</span>
+          <span>{tt("Enable LSP")} {hint.preset.name}</span>
         </button>
         <DismissButton preset={hint.preset} />
       </span>
@@ -74,13 +76,14 @@ export function LspStatusPill({ filePath }: Props) {
 }
 
 function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
+  const { tt } = useI18n();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           className={PILL_CLASS}
-          title="Language server stopped"
+          title={tt("Language server stopped")}
         >
           <span className="size-1.5 rounded-full bg-destructive" />
           <span>{preset.name} LSP</span>
@@ -102,14 +105,14 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
             onClick={() => void restartPresetSessions(preset.id)}
           >
             <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
-            Restart
+            {tt("Restart")}
           </button>
           <button
             type="button"
             className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={() => void setLspActivation(preset.id, "dismissed")}
           >
-            Disable
+            {tt("Disable")}
           </button>
         </div>
       </PopoverContent>
@@ -118,12 +121,13 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
 }
 
 function DismissButton({ preset }: { preset: LspPreset }) {
+  const { tt } = useI18n();
   return (
     <button
       type="button"
       className="rounded-full p-0.5 hover:bg-foreground/10"
       onClick={() => void setLspActivation(preset.id, "dismissed")}
-      title="Dismiss (you can re-enable from Settings)"
+      title={tt("Dismiss (you can re-enable from Settings)")}
     >
       <HugeiconsIcon icon={Cancel01Icon} size={9} strokeWidth={2.2} />
     </button>
@@ -131,6 +135,7 @@ function DismissButton({ preset }: { preset: LspPreset }) {
 }
 
 function InstallPill({ preset }: { preset: LspPreset }) {
+  const { tt } = useI18n();
   const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
   const install = preset.install;
@@ -154,7 +159,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
         <PopoverTrigger asChild>
           <button type="button" className="flex items-center gap-1">
             <HugeiconsIcon icon={SourceCodeIcon} size={11} strokeWidth={2} />
-            <span>Install {preset.name} LSP</span>
+            <span>{tt("Install LSP")} {preset.name}</span>
           </button>
         </PopoverTrigger>
         <DismissButton preset={preset} />
@@ -181,7 +186,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
               type="button"
               className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={copy}
-              title="Copy command"
+              title={tt("Copy command")}
             >
               <HugeiconsIcon
                 icon={copied ? Tick02Icon : Copy01Icon}
@@ -198,7 +203,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
               className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               onClick={() => void openUrl(install.docsUrl).catch(console.error)}
             >
-              Documentation
+              {tt("Documentation")}
             </button>
           ) : (
             <span />
@@ -209,7 +214,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
             onClick={checkAgain}
             disabled={checking}
           >
-            {checking ? "Checking..." : "Check again"}
+            {checking ? tt("Checking...") : tt("Check again")}
           </button>
         </div>
       </PopoverContent>
@@ -224,6 +229,7 @@ function ActivePill({
   preset: LspPreset;
   starting: boolean;
 }) {
+  const { tt } = useI18n();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -231,7 +237,7 @@ function ActivePill({
           type="button"
           className={PILL_CLASS}
           title={
-            starting ? "Language server starting" : "Language server active"
+            starting ? tt("Language server starting") : tt("Language server active")
           }
         >
           {starting ? (
@@ -266,7 +272,7 @@ function ActivePill({
             onClick={() => void restartPresetSessions(preset.id)}
           >
             <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
-            Restart
+            {tt("Restart")}
           </button>
           <button
             type="button"

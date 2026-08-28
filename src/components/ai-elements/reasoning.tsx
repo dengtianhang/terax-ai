@@ -6,6 +6,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useControllableState } from "@radix-ui/react-use-controllable-state";
@@ -149,24 +150,15 @@ export type ReasoningTriggerProps = ComponentProps<
   getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
 };
 
-const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
-  if (isStreaming || duration === 0) {
-    return <Shimmer duration={1}>Thinking</Shimmer>;
-  }
-  if (duration === undefined) {
-    return <span>Reasoned</span>;
-  }
-  return <span>Reasoned for {duration}s</span>;
-};
-
 export const ReasoningTrigger = memo(
   ({
     className,
     children,
-    getThinkingMessage = defaultGetThinkingMessage,
+    getThinkingMessage,
     ...props
   }: ReasoningTriggerProps) => {
     const { isStreaming, isOpen, duration } = useReasoning();
+    const { tt } = useI18n();
 
     return (
       <CollapsibleTrigger
@@ -178,7 +170,13 @@ export const ReasoningTrigger = memo(
       >
         {children ?? (
           <>
-            {getThinkingMessage(isStreaming, duration)}
+            {!getThinkingMessage
+              ? isStreaming || duration === 0
+                ? <Shimmer duration={1}>{tt("Thinking")}</Shimmer>
+                : duration === undefined
+                  ? <span>{tt("Reasoned")}</span>
+                  : <span>{tt("Reasoned for {duration}s").replace("{duration}", String(duration))}</span>
+              : getThinkingMessage(isStreaming, duration)}
             <HugeiconsIcon
               icon={ArrowDown01Icon}
               size={11}

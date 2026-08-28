@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { UIMessage } from "ai";
@@ -256,11 +257,12 @@ export const MessageBranchPrevious = ({
   children,
   ...props
 }: MessageBranchPreviousProps) => {
+  const { tt } = useI18n();
   const { goToPrevious, totalBranches } = useMessageBranch();
 
   return (
     <Button
-      aria-label="Previous branch"
+      aria-label={tt("Previous branch")}
       disabled={totalBranches <= 1}
       onClick={goToPrevious}
       size="icon-sm"
@@ -279,11 +281,12 @@ export const MessageBranchNext = ({
   children,
   ...props
 }: MessageBranchNextProps) => {
+  const { tt } = useI18n();
   const { goToNext, totalBranches } = useMessageBranch();
 
   return (
     <Button
-      aria-label="Next branch"
+      aria-label={tt("Next branch")}
       disabled={totalBranches <= 1}
       onClick={goToNext}
       size="icon-sm"

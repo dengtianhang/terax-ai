@@ -11,6 +11,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { fmtShortcut, MOD_KEY, SHIFT_KEY } from "@/lib/platform";
+import { useI18n } from "@/lib/i18n";
 import { AgentLauncherPanel } from "@/modules/agents/components/AgentLauncherPanel";
 import type { AgentLaunchRequest } from "@/modules/agents/lib/launcher";
 import {
@@ -45,6 +46,7 @@ export function NewTabMenu({
   onNewGitGraph,
   onLaunchAgents,
 }: Props) {
+  const { tt } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
   const openLauncherAfterMenuClose = useRef(false);
@@ -77,7 +79,7 @@ export function NewTabMenu({
                 variant="ghost"
                 size="icon"
                 className="ml-1 size-6 shrink-0 rounded-full bg-foreground/[0.06] text-muted-foreground ring-1 ring-inset ring-foreground/[0.04] hover:bg-foreground/[0.12] hover:text-foreground"
-                title="New tab"
+                title={tt("New tab")}
               >
                 <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={2} />
               </Button>
@@ -99,7 +101,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Terminal</span>
+                <span className="flex-1">{tt("Terminal")}</span>
                 <span className="text-xs text-muted-foreground">
                   {fmtShortcut(MOD_KEY, "T")}
                 </span>
@@ -110,7 +112,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Blocks</span>
+                <span className="flex-1">{tt("Blocks")}</span>
                 <span className="text-xs text-muted-foreground">
                   {fmtShortcut(MOD_KEY, SHIFT_KEY, "T")}
                 </span>
@@ -121,7 +123,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Agents</span>
+                <span className="flex-1">{tt("Agents")}</span>
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
                   size={14}
@@ -135,7 +137,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Privacy</span>
+                <span className="flex-1">{tt("Privacy")}</span>
                 <span className="text-xs text-muted-foreground">
                   {fmtShortcut(MOD_KEY, "R")}
                 </span>
@@ -146,7 +148,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Editor</span>
+                <span className="flex-1">{tt("Editor")}</span>
                 <span className="text-xs text-muted-foreground">
                   {fmtShortcut(MOD_KEY, "E")}
                 </span>
@@ -157,7 +159,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Preview</span>
+                <span className="flex-1">{tt("Preview")}</span>
                 <span className="text-xs text-muted-foreground">
                   {fmtShortcut(MOD_KEY, "P")}
                 </span>
@@ -168,7 +170,7 @@ export function NewTabMenu({
                   size={14}
                   strokeWidth={1.75}
                 />
-                <span className="flex-1">Git Graph</span>
+                <span className="flex-1">{tt("Git Graph")}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

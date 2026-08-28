@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { AgentIcon } from "@/modules/agents/lib/agentIcon";
 import {
   AGENT_LAUNCHERS,
@@ -30,6 +31,7 @@ type Props = {
 const INSTANCE_COUNTS: AgentInstanceCount[] = [1, 2, 3, 4];
 
 export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
+  const { tt } = useI18n();
   const storedCommands = usePreferencesStore((s) => s.agentLaunchCommands);
   const hydrated = usePreferencesStore((s) => s.hydrated);
   const [agentId, setAgentId] = useState<AgentLauncherId>("claude");
@@ -112,7 +114,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
           size="icon-xs"
           className="rounded-md text-muted-foreground"
           onClick={onBack}
-          aria-label="Back to new tab menu"
+          aria-label={tt("Back to new tab menu")}
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={1.75} />
         </Button>

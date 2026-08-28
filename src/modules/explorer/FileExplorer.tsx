@@ -26,6 +26,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { ExplorerSearch, type ExplorerSearchHandle } from "./ExplorerSearch";
 import { EntryRow, PendingRow, StatusRow, type RowActions } from "./TreeRow";
 import { InlineInput } from "./InlineInput";
@@ -201,6 +202,7 @@ export const FileExplorer = memo(
     },
     ref,
   ) {
+    const { tt } = useI18n();
     const tree = useFileTree(rootPath, { onPathRenamed, onPathDeleted });
     const gitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
     const { lookup: lookupGitStatus } = useGitStatus(
@@ -518,8 +520,8 @@ export const FileExplorer = memo(
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
             onClick={() => setIsSearchOpen((v) => !v)}
-            title="Search files"
-            aria-label="Search files"
+            title={tt("Search files")}
+            aria-label={tt("Search files")}
           >
             <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={2} />
           </Button>
@@ -529,7 +531,7 @@ export const FileExplorer = memo(
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
             onClick={() => tree.beginCreate(rootPath, "file")}
-            title="New file"
+            title={tt("New file")}
           >
             <HugeiconsIcon icon={FileAddIcon} size={13} strokeWidth={2} />
           </Button>
@@ -538,7 +540,7 @@ export const FileExplorer = memo(
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
             onClick={() => tree.beginCreate(rootPath, "dir")}
-            title="New folder"
+            title={tt("New folder")}
           >
             <HugeiconsIcon icon={FolderAddIcon} size={13} strokeWidth={2} />
           </Button>
@@ -547,7 +549,7 @@ export const FileExplorer = memo(
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
             onClick={() => tree.refresh(rootPath)}
-            title="Refresh"
+            title={tt("Refresh")}
           >
             <HugeiconsIcon icon={Refresh01Icon} size={12} strokeWidth={2} />
           </Button>

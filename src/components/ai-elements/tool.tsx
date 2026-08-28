@@ -6,6 +6,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import {
   ArrowRight01Icon,
   CheckListIcon,
@@ -708,6 +709,7 @@ function SuggestCommandCard({
   command: string;
   explanation: string | null;
 }) {
+  const { tt } = useI18n();
   const [inserted, setInserted] = useState(false);
   const onInsert = () => {
     const ok = useChatStore
@@ -735,14 +737,14 @@ function SuggestCommandCard({
             "disabled:opacity-60 disabled:cursor-default disabled:hover:bg-transparent",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           )}
-          aria-label="Insert into active terminal"
+          aria-label={tt("Insert into active terminal")}
         >
           <HugeiconsIcon
             icon={inserted ? TerminalIcon : ArrowRight01Icon}
             size={12}
             strokeWidth={1.75}
           />
-          <span>{inserted ? "Inserted" : "Insert"}</span>
+          <span>{inserted ? tt("Inserted") : tt("Insert")}</span>
         </button>
       </div>
     </div>

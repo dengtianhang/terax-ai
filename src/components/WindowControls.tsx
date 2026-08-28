@@ -1,3 +1,4 @@
+import { useI18n } from "@/lib/i18n";
 import { USE_CUSTOM_WINDOW_CONTROLS } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import {
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function WindowControls({ closeOnly = false }: Props) {
+  const { tt } = useI18n();
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
@@ -41,11 +43,11 @@ export function WindowControls({ closeOnly = false }: Props) {
     <div className="flex h-full shrink-0 items-center gap-0.5 pr-1">
       {!closeOnly && (
         <>
-          <CtlButton ariaLabel="Minimize" onClick={() => void w.minimize()}>
+          <CtlButton ariaLabel={tt("Minimize")} onClick={() => void w.minimize()}>
             <HugeiconsIcon icon={MinusSignIcon} size={12} strokeWidth={2} />
           </CtlButton>
           <CtlButton
-            ariaLabel={maximized ? "Restore" : "Maximize"}
+            ariaLabel={maximized ? tt("Restore") : tt("Maximize")}
             onClick={() => void w.toggleMaximize()}
           >
             <HugeiconsIcon
@@ -56,7 +58,7 @@ export function WindowControls({ closeOnly = false }: Props) {
           </CtlButton>
         </>
       )}
-      <CtlButton ariaLabel="Close" onClick={() => void w.close()} danger>
+      <CtlButton ariaLabel={tt("Close")} onClick={() => void w.close()} danger>
         <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={2} />
       </CtlButton>
     </div>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { useChat, type UIMessage } from "@ai-sdk/react";
 import {
   Add01Icon,
@@ -275,6 +276,7 @@ function Header({
   messages?: UIMessage[];
   onHeaderPointerDown: (e: React.PointerEvent) => void;
 }) {
+  const { tt } = useI18n();
   const customAgents = useAgentsStore((s) => s.customAgents);
   void customAgents;
 
@@ -303,8 +305,8 @@ function Header({
           variant="ghost"
           onClick={onClose}
           className="size-5"
-          aria-label="Close"
-          title="Close (Esc)"
+          aria-label={tt("Close")}
+          title={tt("Close (Esc)")}
         >
           <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={1.75} />
         </Button>
@@ -338,6 +340,7 @@ function formatTokens(n: number): string {
 }
 
 function ContextIndicator({ messages }: { messages: UIMessage[] }) {
+  const { tt } = useI18n();
   const modelId = useChatStore((s) => s.selectedModelId);
   const tokens = useChatStore((s) => s.agentMeta.tokens);
   const lastInput = useChatStore((s) => s.agentMeta.lastInputTokens);
@@ -369,7 +372,7 @@ function ContextIndicator({ messages }: { messages: UIMessage[] }) {
         <ContextContentHeader />
         <ContextContentBody>
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Model</span>
+            <span>{tt("Model")}</span>
             <span className="font-mono text-foreground">{modelLabel}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-muted-foreground">
@@ -380,7 +383,7 @@ function ContextIndicator({ messages }: { messages: UIMessage[] }) {
           </div>
           {lastCached > 0 && (
             <div className="flex items-center justify-between text-muted-foreground">
-              <span>Of which cached</span>
+              <span>{tt("Of which cached")}</span>
               <span className="font-mono text-foreground">
                 {formatTokens(lastCached)}
               </span>
@@ -389,26 +392,26 @@ function ContextIndicator({ messages }: { messages: UIMessage[] }) {
           {reported > 0 && (
             <>
               <div className="mt-1.5 flex items-center justify-between text-muted-foreground">
-                <span>Session input</span>
+                <span>{tt("Session input")}</span>
                 <span className="font-mono text-foreground">
                   {formatTokens(tokens.inputTokens)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-muted-foreground">
-                <span>Session output</span>
+                <span>{tt("Session output")}</span>
                 <span className="font-mono text-foreground">
                   {formatTokens(tokens.outputTokens)}
                 </span>
               </div>
               {tokens.cachedInputTokens > 0 && (
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span>Cache hit</span>
+                  <span>{tt("Cache hit")}</span>
                   <span className="font-mono text-foreground">{cacheRate}%</span>
                 </div>
               )}
               {cost != null && (
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span>Session cost</span>
+                  <span>{tt("Session cost")}</span>
                   <span className="font-mono text-foreground">
                     ${cost.toFixed(cost < 0.01 ? 4 : cost < 1 ? 3 : 2)}
                   </span>
@@ -417,7 +420,7 @@ function ContextIndicator({ messages }: { messages: UIMessage[] }) {
             </>
           )}
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Window</span>
+            <span>{tt("Window")}</span>
             <span className="font-mono text-foreground">
               {formatTokens(max)}
             </span>
@@ -436,6 +439,7 @@ function ContextIndicator({ messages }: { messages: UIMessage[] }) {
 }
 
 function SessionPicker() {
+  const { tt } = useI18n();
   const sessions = useChatStore((s) => s.sessions);
   const activeId = useChatStore((s) => s.activeSessionId);
   const switchSession = useChatStore((s) => s.switchSession);
@@ -457,7 +461,7 @@ function SessionPicker() {
             "text-[11px] text-muted-foreground transition-colors",
             "hover:bg-accent hover:text-foreground",
           )}
-          title="Switch session"
+          title={tt("Switch session")}
         >
           <span className="truncate">{active.title || "New chat"}</span>
           <HugeiconsIcon
@@ -469,12 +473,12 @@ function SessionPicker() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
-        <DropdownMenuItem
+          <DropdownMenuItem
           onSelect={() => newSession()}
           className="gap-2 text-xs"
         >
           <HugeiconsIcon icon={Add01Icon} size={12} strokeWidth={1.75} />
-          New session
+          {tt("New session")}
         </DropdownMenuItem>
         {sorted.length > 0 ? <DropdownMenuSeparator /> : null}
         {sorted.map((s) => (
@@ -502,6 +506,7 @@ function SessionRow({
   onSelect: () => void;
   onDelete: () => void;
 }) {
+  const { tt } = useI18n();
   return (
     <DropdownMenuItem
       onSelect={(e) => {
@@ -528,7 +533,7 @@ function SessionRow({
           e.stopPropagation();
           onDelete();
         }}
-        title="Delete session"
+        title={tt("Delete session")}
         className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
       >
         <HugeiconsIcon icon={Delete02Icon} size={11} strokeWidth={1.75} />

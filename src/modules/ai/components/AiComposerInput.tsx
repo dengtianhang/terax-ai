@@ -1,6 +1,7 @@
 import { Popover, PopoverAnchor } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 import { usePresence } from "@/lib/usePresence";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWorkspaceFiles } from "../hooks/useWorkspaceFiles";
@@ -59,6 +60,7 @@ function detectFileTrigger(value: string, caret: number): FileTrigger | null {
 }
 
 export function AiComposerInput() {
+  const { tt } = useI18n();
   const c = useComposer();
   const snippets = useSnippetsStore((s) => s.snippets);
   const workspaceRoot = useChatStore((s) => s.live.getWorkspaceRoot());
@@ -257,7 +259,7 @@ export function AiComposerInput() {
                   c.submit();
                 }
               }}
-              placeholder="Ask Terax anything   -   # for snippets and commands, @ for files"
+              placeholder={tt("Ask Terax anything   -   # for snippets and commands, @ for files")}
               rows={1}
               className={cn(
                 "max-h-40 flex-1 resize-none bg-transparent text-[13px] leading-relaxed outline-none",

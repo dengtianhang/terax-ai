@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { currentWorkspaceEnv } from "@/modules/workspace";
+import { useI18n } from "@/lib/i18n";
 import { File02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { invoke } from "@tauri-apps/api/core";
@@ -32,6 +33,7 @@ export function NewEditorDialog({
   rootPath,
   onCreated,
 }: Props) {
+  const { tt } = useI18n();
   const [name, setName] = useState("untitled.txt");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +108,7 @@ export function NewEditorDialog({
               void submit();
             }
           }}
-          placeholder="example.ts"
+          placeholder={tt("example.ts")}
         />
         {error ? (
           <div className="text-xs text-destructive">{error}</div>
@@ -117,9 +119,9 @@ export function NewEditorDialog({
         )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tt("Cancel")}
           </Button>
-          <Button onClick={() => void submit()}>Create</Button>
+          <Button onClick={() => void submit()}>{tt("Create")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

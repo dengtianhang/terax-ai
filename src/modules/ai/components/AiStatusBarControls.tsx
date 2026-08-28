@@ -98,6 +98,7 @@ export function AiOpenButton({ onOpen }: { onOpen: () => void }) {
 }
 
 export function AiStatusBarControls() {
+  const { tt } = useI18n();
   const c = useComposer();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toggleMini = useChatStore((s) => s.toggleMini);
@@ -119,7 +120,7 @@ export function AiStatusBarControls() {
       />
 
       <IconBtn
-        title="Attach file or image"
+        title={tt("Attach file or image")}
         onClick={() => fileInputRef.current?.click()}
         disabled={c.isBusy}
       >
@@ -132,10 +133,10 @@ export function AiStatusBarControls() {
             !c.voice.hasKey
               ? `Voice needs a ${STT_PROVIDER_LABELS[c.voice.sttProvider]} key`
               : c.voice.recording
-                ? "Stop & transcribe"
+              ? tt("Stop & transcribe")
                 : c.voice.transcribing
-                  ? "Transcribing…"
-                  : "Voice input"
+                  ? tt("Transcribing…")
+                  : tt("Voice input")
           }
           onClick={() =>
             c.voice.recording ? c.voice.stop() : void c.voice.start()
@@ -161,10 +162,10 @@ export function AiStatusBarControls() {
       <span className="mx-1 h-8 w-px bg-border" aria-hidden />
       <Button
         onClick={closePanel}
-        title="Close AI panel"
+        title={tt("Close AI panel")}
         size="xs"
         variant="ghost"
-        aria-label="Close AI panel"
+        aria-label={tt("Close AI panel")}
         className="text-[11px] text-foreground/85 px-1"
       >
         <Kbd className="h-4 gap-px px-2 font-mono text-[11px]">
@@ -185,8 +186,8 @@ export function AiStatusBarControls() {
           variant="ghost"
           onClick={c.stop}
           className="size-6"
-          aria-label="Stop"
-          title="Stop"
+          aria-label={tt("Stop")}
+          title={tt("Stop")}
         >
           <HugeiconsIcon icon={StopCircleIcon} size={13} strokeWidth={1.75} />
         </Button>
@@ -197,8 +198,8 @@ export function AiStatusBarControls() {
           onClick={c.submit}
           disabled={!c.canSend}
           className="h-5.5 w-7.5 ml-1"
-          aria-label="Send"
-          title="Send (Enter)"
+          aria-label={tt("Send")}
+          title={tt("Send (Enter)")}
         >
           <HugeiconsIcon icon={ArrowUpIcon} size={13} strokeWidth={1.75} />
         </Button>
@@ -210,6 +211,7 @@ export function AiStatusBarControls() {
 type Tab = "all" | "favorites" | "recent";
 
 function ModelDropdown() {
+  const { tt } = useI18n();
   const selected = useChatStore((s) => s.selectedModelId);
   const apiKeys = useChatStore((s) => s.apiKeys);
   const setSelected = useChatStore((s) => s.setSelectedModelId);
@@ -335,7 +337,7 @@ function ModelDropdown() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}
-            placeholder="Search models, providers, capabilities…"
+            placeholder={tt("Search models, providers, capabilities…")}
             className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
           />
         </div>
@@ -369,7 +371,7 @@ function ModelDropdown() {
           <div className="flex w-11 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-border/70 bg-muted/20 py-1.5">
             <ProviderPill
               icon={AiBookIcon}
-              title="All providers"
+              title={tt("All providers")}
               active={activeProvider === null}
               onClick={() => setActiveProvider(null)}
             />
@@ -392,7 +394,7 @@ function ModelDropdown() {
             {customEndpoints.length > 0 && (
               <ProviderPill
                 icon={PlugIcon}
-                title="OpenAI Compatible"
+                title={tt("OpenAI Compatible")}
                 active={activeProvider === COMPAT_PROVIDER_ID}
                 onClick={() => setActiveProvider(COMPAT_PROVIDER_ID)}
               />
@@ -404,7 +406,7 @@ function ModelDropdown() {
             {activeProvider === COMPAT_PROVIDER_ID && (
               <div className="flex items-center gap-1.5 px-3 pt-1 pb-1.5 text-[11px] font-medium tracking-tight text-muted-foreground/90">
                 <HugeiconsIcon icon={PlugIcon} size={13} strokeWidth={1.75} />
-                <span>OpenAI Compatible</span>
+                <span>{tt("OpenAI Compatible")}</span>
               </div>
             )}
             {activeProvider !== null &&
