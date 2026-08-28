@@ -100,6 +100,17 @@ export function SettingsApp() {
   }, [init]);
 
   useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      void getCurrentWebviewWindow().close();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, []);
+
+  useEffect(() => {
     const apply = (detail: string) => {
       if (detail === "ai" || detail === "connections") {
         setActive("models");
@@ -142,7 +153,7 @@ export function SettingsApp() {
               >
                 <HugeiconsIcon icon={tab.icon} size={12} strokeWidth={1.75} />
                 <span>
-                  {tab.id === "general" ? t("settings.general") : tab.label}
+                  {t(`settings.${tab.id}` as Parameters<typeof t>[0])}
                 </span>
               </TabsTrigger>
             ))}

@@ -5,11 +5,13 @@ use modules::{
 };
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri::async_runtime::spawn_blocking;
-#[cfg(target_os = "macos")]
-use tauri::{PhysicalPosition, WindowEvent};
+use tauri::{Emitter, Manager, PhysicalPosition, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_window_state::StateFlags;
+#[cfg(windows)]
+use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
+#[cfg(windows)]
+use windows_sys::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER};
 
 /// Drained on first read so HMR / re-mounts can't replay the launch dir.
 #[derive(Default)]
@@ -97,13 +99,19 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
         _ => "settings.html".to_string(),
     };
 
+    let main = app.get_webview_window("main");
     if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.set_always_on_top(true);
         let _ = window.show();
+        let _ = window.set_always_on_top(false);
+        #[cfg(debug_assertions)]
+        window.open_devtools();
+        if let Some(main) = &main {
+            let _ = main.set_enabled(false);
+            log::info!("settings existing: main_pos={:?} main_size={:?} main_monitor={:?} settings_pos={:?} settings_size={:?}", main.outer_position(), main.outer_size(), main.current_monitor().ok().flatten().map(|m| (m.position().clone(), m.size().clone(), m.work_area().clone())), window.outer_position(), window.outer_size());
+            center_settings_window(main, &window);
+        }
         let _ = window.set_focus();
         if let Some(t) = tab.as_deref().filter(|s| !s.is_empty()) {
-            // emit() serializes via JSON — no string-escape footgun, unlike
-            // eval() with format!(). Frontend listens via Tauri event API.
             let _ = window.emit("terax:settings-tab", t);
         }
         return Ok(());
@@ -114,60 +122,118 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
         .inner_size(900.0, 700.0)
         .min_inner_size(820.0, 620.0)
         .resizable(true)
-        .visible(false)
-        // Keep settings above the main app window so it doesn't get hidden
-        // when the user clicks back into the editor or terminal (#33).
-        .always_on_top(true);
-
-    // Tie lifecycle to the main window so settings minimizes/closes with it.
-    // macOS: skip parent() — child + always_on_top leaves the settings webview
-    // behind the main window except while the parent is being dragged (#33).
-    #[cfg(not(target_os = "macos"))]
-    let builder = if let Some(main) = app.get_webview_window("main") {
-        builder.parent(&main).map_err(|e| e.to_string())?
-    } else {
-        builder
-    };
+        .visible(false);
 
     #[cfg(target_os = "macos")]
     let builder = builder
         .title_bar_style(tauri::TitleBarStyle::Overlay)
         .hidden_title(true);
 
-    // On Linux/Windows we render our own titlebar, so drop native chrome
-    // and make the window transparent.
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let builder = builder.decorations(false).transparent(true);
 
     let window = builder.build().map_err(|e| e.to_string())?;
 
-    // Some Linux compositors (GNOME/Mutter with CSD-by-default) ignore the
-    // builder-time decorations flag — re-assert it after realize.
     #[cfg(target_os = "linux")]
     {
         let _ = window.set_decorations(false);
     }
 
-    #[cfg(target_os = "macos")]
-    if let Some(main) = app.get_webview_window("main") {
-        if let (Ok(main_pos), Ok(main_size), Ok(settings_size)) = (
-            main.outer_position(),
-            main.outer_size(),
-            window.outer_size(),
-        ) {
-            let x = main_pos.x
-                + ((main_size.width as i32).saturating_sub(settings_size.width as i32)) / 2;
-            let y = main_pos.y
-                + ((main_size.height as i32).saturating_sub(settings_size.height as i32)) / 2;
-            let _ = window.set_position(PhysicalPosition::new(x, y));
-        } else {
-            let _ = window.center();
-        }
+    if let Some(main) = &main {
+        let _ = main.set_enabled(false);
     }
+    let _ = window.show();
+    #[cfg(debug_assertions)]
+    window.open_devtools();
+    if let Some(main) = &main {
+            center_settings_window(main, &window);
+    }
+
+    let app_handle = app.clone();
+    window.on_window_event(move |event| {
+        if matches!(event, WindowEvent::CloseRequested { .. } | WindowEvent::Destroyed) {
+            if let Some(main) = app_handle.get_webview_window("main") {
+                let _ = main.set_enabled(true);
+                let _ = main.set_focus();
+            }
+        }
+    });
 
     Ok(())
 }
 
+fn center_settings_window(main: &tauri::WebviewWindow, settings: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    {
+        if let (Ok(main_hwnd), Ok(settings_hwnd), Ok(window_size)) =
+            (main.hwnd(), settings.hwnd(), settings.outer_size())
+        {
+            unsafe {
+                let monitor = MonitorFromWindow(main_hwnd.0, MONITOR_DEFAULTTONEAREST);
+                if !monitor.is_null() {
+                    let mut info = MONITORINFO::default();
+                    info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+                    if GetMonitorInfoW(monitor, &mut info) != 0 {
+                        let monitor_scale = main
+                            .current_monitor()
+                            .ok()
+                            .flatten()
+                            .map(|monitor| monitor.scale_factor())
+                            .unwrap_or(1.0);
+                        let window_scale = settings.scale_factor().unwrap_or(1.0);
+                        let width = info.rcWork.right - info.rcWork.left;
+                        let height = info.rcWork.bottom - info.rcWork.top;
+                        let window_width = ((window_size.width as f64 * monitor_scale / window_scale).round()) as i32;
+                        let window_height = ((window_size.height as f64 * monitor_scale / window_scale).round()) as i32;
+                        let x = info.rcWork.left + (width - window_width) / 2;
+                        let y = info.rcWork.top + (height - window_height) / 2;
+                        let before = settings.outer_position();
+                        let result = SetWindowPos(
+                            settings_hwnd.0,
+                            std::ptr::null_mut(),
+                            x,
+                            y,
+                            0,
+                            0,
+                            SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE,
+                        );
+                        let after = settings.outer_position();
+                        let message = format!(
+                            "settings recenter: monitor=({},{} {}x{}), outer={}x{}, monitor_scale={}, window_scale={}, target=({},{}), result={}, before={:?}, after={:?}",
+                            info.rcWork.left,
+                            info.rcWork.top,
+                            width,
+                            height,
+                            window_size.width,
+                            window_size.height,
+                            monitor_scale,
+                            window_scale,
+                            x,
+                            y,
+                            result,
+                            before,
+                            after,
+                        );
+                        log::info!("{message}");
+                        let _ = settings.eval(format!("console.info({:?})", message));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(monitor) = main.current_monitor().ok().flatten() {
+        if let Ok(settings_size) = settings.outer_size() {
+            let area = monitor.work_area();
+            let x = area.position.x + (area.size.width as i32 - settings_size.width as i32) / 2;
+            let y = area.position.y + (area.size.height as i32 - settings_size.height as i32) / 2;
+            let _ = settings.set_position(PhysicalPosition::new(x, y));
+            return;
+        }
+    }
+    let _ = settings.center();
+}
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(windows)]
@@ -203,6 +269,7 @@ pub fn run() {
         .plugin(
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(StateFlags::all() & !StateFlags::VISIBLE)
+                .skip_initial_state("settings")
                 .build(),
         )
         .plugin(tauri_plugin_autostart::Builder::new().build())
@@ -218,22 +285,6 @@ pub fn run() {
         .setup(move |_app| {
             if let Err(error) = control::start(_app.handle().clone(), control_for_setup.clone()) {
                 log::warn!("could not start Terax control server: {error}");
-            }
-            // macOS skips parent() for the settings window, so tie its lifecycle
-            // to the main window here instead. Other platforms keep parent().
-            #[cfg(target_os = "macos")]
-            if let Some(main) = _app.get_webview_window("main") {
-                let handle = _app.handle().clone();
-                main.on_window_event(move |event| {
-                    if matches!(
-                        event,
-                        WindowEvent::CloseRequested { .. } | WindowEvent::Destroyed
-                    ) {
-                        if let Some(settings) = handle.get_webview_window("settings") {
-                            let _ = settings.close();
-                        }
-                    }
-                });
             }
             Ok(())
         })
@@ -362,7 +413,7 @@ pub fn run() {
                 // warm start, several at once). Seed the drain-once state and
                 // emit; canonicalize so the /tmp -> /private/tmp symlink can't
                 // defeat openFileTab's path dedupe against a CLI launch.
-                #[cfg(target_os = "macos")]
+              #[cfg(target_os = "macos")]
                 tauri::RunEvent::Opened { urls } => {
                     let entries = urls
                         .iter()
@@ -441,3 +492,17 @@ mod launch_target_tests {
         assert_eq!(out.files, vec!["/other/x.rs".to_string()]);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

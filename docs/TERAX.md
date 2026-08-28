@@ -1,6 +1,17 @@
-# TERAX.md
+# Terax 项目架构与开发约定
 
-Terax loads `TERAX.md` from the workspace root as agent memory (similar to AGENTS.md / CLAUDE.md). This file is also the project's living architecture doc - read it before making changes.
+> 文档类型：架构文档  
+> 文档状态：持续维护  
+> 文档语言：中文为主，代码标识符和技术术语保留英文
+
+Terax loads `docs/TERAX.md` from the workspace root as agent memory (similar to AGENTS.md / CLAUDE.md). This file is also the project's living architecture doc - read it before making changes.
+
+## 需求与 Bug 记录规则
+
+- 新请求先自动分类：新增能力、行为目标、产品改进记入 docs/REQUIREMENTS.md；现有能力异常、回归、错误行为记入 docs/BUGS.md。
+- 先在对应清单新增或更新编号，再修改代码；暂不实施的条目也保留为 [ ]。
+- 完成后更新详情状态、验收结果和清单勾选；提交信息使用对应 REQ-NNN 或 BUG-NNN。
+- 两份列表和详情统一使用中文 Markdown 格式；代码标识符、命令、API 保留英文。
 
 ## Project
 
