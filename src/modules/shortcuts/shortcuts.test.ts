@@ -109,6 +109,21 @@ describe("matchBinding", () => {
     ).toBe(false);
   });
 
+  it("matches bracket shortcuts by physical code", () => {
+    expect(
+      matchBinding(event({ key: "Escape", code: "BracketLeft", ctrlKey: true }), {
+        key: "[",
+        ctrl: true,
+      }),
+    ).toBe(true);
+    expect(
+      matchBinding(event({ key: "Escape", code: "BracketRight", ctrlKey: true }), {
+        key: "]",
+        ctrl: true,
+      }),
+    ).toBe(true);
+  });
+
   it("does not fall back to the physical code without alt or shift", () => {
     expect(
       matchBinding(event({ key: "ç", code: "KeyC", metaKey: true }), {

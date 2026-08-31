@@ -56,6 +56,12 @@ export function PaneTreeView(props: Props) {
           onExit={b.onExit}
         />
         <DropOverlay leafId={node.id} />
+        {focused && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-20 rounded-[inherit] border-[0.5px] border-foreground/20 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--foreground)_10%,transparent),0_0_5px_color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+          />
+        )}
       </div>
     );
   }

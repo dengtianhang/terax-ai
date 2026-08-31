@@ -431,7 +431,8 @@ export function matchBinding(
   if (id === "tab.selectByIndex") {
     if (!/^[1-9]$/.test(e.key)) return false;
   } else if (eventKey !== bindingKey) {
-    if (!binding.alt && !binding.shift) return false;
+    // Some Windows keyboard layouts rewrite key; code still identifies brackets.
+    if (!binding.alt && !binding.shift && /^[a-z0-9]$/i.test(bindingKey)) return false;
     if (keyFromCode(e.code) !== bindingKey) return false;
   }
 
