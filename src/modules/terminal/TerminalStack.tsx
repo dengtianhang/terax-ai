@@ -1,10 +1,11 @@
 import type { Tab } from "@/modules/tabs";
 import type { SearchAddon } from "@xterm/addon-search";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { selectLiveTerminals } from "./lib/liveTerminals";
 import { leafIds } from "./lib/panes";
 import { PaneTreeView } from "./PaneTreeView";
 import type { TerminalPaneHandle } from "./TerminalPane";
+import { terminalDebugStats } from "./lib/useTerminalSession";
 
 type Props = {
   tabs: Tab[];
@@ -15,6 +16,7 @@ type Props = {
   onCwd: (leafId: number, cwd: string) => void;
   onExit: (leafId: number, code: number) => void;
   onFocusLeaf: (tabId: number, leafId: number) => void;
+  onClosePane: (leafId: number) => void;
 };
 
 type Bundle = {
@@ -32,6 +34,7 @@ export function TerminalStack({
   onCwd,
   onExit,
   onFocusLeaf,
+  onClosePane,
 }: Props) {
   const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
 
@@ -78,6 +81,7 @@ export function TerminalStack({
 
   return (
     <div className="relative h-full w-full">
+      {import.meta.env.DEV && <TerminalDiagnostics />}
       {terminals.map((t) => {
         const tabVisible = t.id === activeId;
         return (
@@ -97,11 +101,54 @@ export function TerminalStack({
               activeLeafId={t.activeLeafId}
               blocks={t.blocks ?? false}
               onFocusLeaf={(leafId) => onFocusLeaf(t.id, leafId)}
+              onClosePane={onClosePane}
+              canClosePane={leafIds(t.paneTree).length > 1}
               getBundle={getBundle}
             />
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function TerminalDiagnostics() {
+  const [open, setOpen] = useState(false);
+  const [report, setReport] = useState("");
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.ctrlKey &&
+        event.shiftKey &&
+        event.altKey &&
+        event.code === "KeyD"
+      ) {
+        event.preventDefault();
+        setOpen((value) => !value);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  if (!open) return null;
+  const refresh = () => setReport(JSON.stringify(terminalDebugStats(), null, 2));
+  const copy = async () => {
+    refresh();
+    await navigator.clipboard.writeText(JSON.stringify(terminalDebugStats(), null, 2));
+  };
+  return (
+    <div className="absolute bottom-3 right-3 z-50 w-[min(620px,calc(100%-1.5rem))] rounded-md border border-border bg-background/95 p-3 text-xs shadow-xl backdrop-blur">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <strong>Terminal diagnostics (dev only)</strong>
+        <div className="flex gap-2">
+          <button type="button" className="rounded border px-2 py-1" onClick={refresh}>Refresh</button>
+          <button type="button" className="rounded border px-2 py-1" onClick={() => void copy()}>Copy</button>
+          <button type="button" className="rounded border px-2 py-1" onClick={() => setOpen(false)}>Close</button>
+        </div>
+      </div>
+      <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-all rounded bg-muted p-2">{report || "Click Refresh"}</pre>
     </div>
   );
 }

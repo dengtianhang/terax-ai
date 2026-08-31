@@ -104,6 +104,9 @@ type Session = {
 };
 
 const sessions = new Map<number, Session>();
+const recentAnsiByLeaf = new Map<number, string>();
+const ptyDecoder = new TextDecoder();
+const ptyEncoder = new TextEncoder();
 
 // Block-overlay viewport listeners, keyed by leafId at module scope so the
 // overlay (a child) can subscribe before the parent effect creates the session.
@@ -491,8 +494,35 @@ function deliverPtyBytes(leafId: number, bytes: Uint8Array): void {
   // Retained slots keep parsing live (render paused); the ring is only for
   // leaves whose buffer was stolen or never bound.
   const slot = getLiveSlotForLeaf(leafId);
-  if (slot) slot.term.write(bytes);
-  else s.dormantRing.push(bytes);
+  const text = new TextDecoder().decode(bytes);
+  const ansi = text.match(/\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\))/g);
+  if (ansi?.length) {
+    const previous = recentAnsiByLeaf.get(leafId) ?? "";
+    recentAnsiByLeaf.set(leafId, `${previous}${ansi.join("")}`.slice(-4096));
+  }
+  const output = normalizeLightTerminalOutput(bytes);
+  if (slot) slot.term.write(output);
+  else s.dormantRing.push(output);
+}
+
+function normalizeLightTerminalOutput(bytes: Uint8Array): Uint8Array {
+  if (document.documentElement.classList.contains("dark")) return bytes;
+  const text = ptyDecoder.decode(bytes);
+  const normalized = text.replace(
+    /\x1b\[48;2;(\d+);(\d+);(\d+)m/g,
+    (sequence, red, green, blue) => {
+      const channels = [Number(red), Number(green), Number(blue)];
+      if (
+        channels[0] === channels[1] &&
+        channels[1] === channels[2] &&
+        channels[0] <= 64
+      ) {
+        return "\x1b[48;2;245;245;245m";
+      }
+      return sequence;
+    },
+  );
+  return normalized === text ? bytes : ptyEncoder.encode(normalized);
 }
 
 const SPAWN_RETRY_DELAY_MS = 250;
@@ -1106,12 +1136,34 @@ export function terminalDebugStats() {
   const snapshotTotal = liveSessions.reduce((n, s) => n + s.snapshotLen, 0);
   const slots = poolSlotStats();
   return {
+    environment: {
+      term: import.meta.env.MODE,
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+    },
+    theme: {
+      dark: document.documentElement.classList.contains("dark"),
+      background: getComputedStyle(document.documentElement).getPropertyValue(
+        "--terminal-background",
+      ),
+      foreground: getComputedStyle(document.documentElement).getPropertyValue(
+        "--terminal-foreground",
+      ),
+      ansiBlack: getComputedStyle(document.documentElement).getPropertyValue(
+        "--terminal-ansi-black",
+      ),
+      ansiWhite: getComputedStyle(document.documentElement).getPropertyValue(
+        "--terminal-ansi-white",
+      ),
+    },
     poolSize: poolSize(),
     webglContexts: slots.filter((s) => s.webgl).length,
     idleSlots: slots.filter((s) => s.leafId === null).length,
     slots,
     sessionCount: liveSessions.length,
     sessions: liveSessions,
+    recentAnsi: Object.fromEntries(recentAnsiByLeaf),
     ringBytesTotal: ringTotal,
     snapshotCharsTotal: snapshotTotal,
     domCanvases: document.querySelectorAll("canvas").length,
