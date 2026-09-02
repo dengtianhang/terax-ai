@@ -59,15 +59,17 @@ describe("terminalClipboard", () => {
     await expect(readTerminalClipboard()).resolves.toBe("web");
   });
 
-  it("never touches the native clipboard off Linux", async () => {
+  it("reads and writes native clipboard off Linux too", async () => {
     platform(MAC);
-    web.readText.mockResolvedValue("web");
+    native.readText.mockResolvedValue("native");
+    native.writeText.mockResolvedValue();
     const { readTerminalClipboard, writeTerminalClipboard } = await load();
-    await expect(readTerminalClipboard()).resolves.toBe("web");
+    await expect(readTerminalClipboard()).resolves.toBe("native");
     await writeTerminalClipboard("x");
-    expect(native.readText).not.toHaveBeenCalled();
-    expect(native.writeText).not.toHaveBeenCalled();
-    expect(web.writeText).toHaveBeenCalledWith("x");
+    expect(native.readText).toHaveBeenCalledOnce();
+    expect(native.writeText).toHaveBeenCalledWith("x");
+    expect(web.readText).not.toHaveBeenCalled();
+    expect(web.writeText).not.toHaveBeenCalled();
   });
 
   it("writes the native clipboard first on Linux", async () => {

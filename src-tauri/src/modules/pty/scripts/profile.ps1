@@ -47,6 +47,11 @@ function global:__terax_urlencode {
 function global:__terax_install_readline {
     if ($global:__terax_readline_done) { return }
     if (-not (Test-Path Function:PSConsoleHostReadLine)) { return }
+    try {
+        Set-PSReadLineOption -PredictionSource History
+        Set-PSReadLineOption -PredictionViewStyle InlineView
+        Set-PSReadLineKeyHandler -Key Tab -Function AcceptSuggestion
+    } catch {}
     $global:__terax_readline_done = $true
     # global: is required -- a plain Function: copy made inside a function
     # lands in its local scope and vanishes when it returns, leaving the

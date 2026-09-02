@@ -151,6 +151,11 @@ fn apply_common(
 ) {
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
+    cmd.env("TERM_PROGRAM_BACKGROUND", "light");
+    cmd.env("COLORFGBG", "0;15");
+    cmd.env_remove("NO_COLOR");
+    #[cfg(windows)]
+    cmd.env("ConEmuANSI", "ON");
     cmd.env("TERAX_TERMINAL", "1");
     if blocks {
         cmd.env("TERAX_BLOCKS", "1");
@@ -432,6 +437,9 @@ mod unix {
     mod tests {
         use super::*;
 
+
+
+
         #[test]
         fn classify_maps_known_shells() {
             assert!(matches!(Shell::classify("/bin/zsh"), Shell::Zsh));
@@ -662,6 +670,8 @@ mod windows {
         }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        cmd.env("TERM_PROGRAM_BACKGROUND", "light");
+        cmd.env("COLORFGBG", "0;15");
         cmd.env("TERAX_TERMINAL", "1");
         super::ensure_utf8_locale(&mut cmd);
         log::info!("spawning WSL shell: {distro} ({shell_path})");
@@ -900,6 +910,13 @@ mod windows {
         use super::*;
 
         #[test]
+        fn powershell_profile_accepts_inline_predictions_with_tab() {
+            assert!(PROFILE_PS1.contains("Set-PSReadLineOption -PredictionSource History"));
+            assert!(PROFILE_PS1.contains("Set-PSReadLineOption -PredictionViewStyle InlineView"));
+            assert!(PROFILE_PS1.contains("Set-PSReadLineKeyHandler -Key Tab -Function AcceptSuggestion"));
+        }
+
+        #[test]
         fn builds_wsl_zsh_launch_spec_with_env_and_login() {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
@@ -1132,6 +1149,14 @@ mod tests {
         };
         apply_common(&mut command, None, false, Some(&control));
 
+        assert_eq!(command.get_env("TERM"), Some(OsStr::new("xterm-256color")));
+        assert_eq!(command.get_env("COLORTERM"), Some(OsStr::new("truecolor")));
+        assert_eq!(
+            command.get_env("TERM_PROGRAM_BACKGROUND"),
+            Some(OsStr::new("light"))
+        );
+        assert_eq!(command.get_env("COLORFGBG"), Some(OsStr::new("0;15")));
+        assert_eq!(command.get_env("NO_COLOR"), None);
         assert_eq!(
             command.get_env("TERAX_CONTROL_ADDR"),
             Some(OsStr::new("127.0.0.1:1234"))

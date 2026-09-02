@@ -217,7 +217,7 @@ export const textMessages: Record<Locale, Record<string, string>> = {
     "Session output": "会话输出", "Cache hit": "缓存命中", "Session cost": "会话成本", Window: "窗口",
     "Search models, providers, capabilities…": "搜索模型、提供商、能力…", "All providers": "所有提供商",
     "OpenAI Compatible": "OpenAI 兼容", All: "全部", "Stage all changes": "暂存所有更改",
-    "Close tab": "关闭标签页", "Ask Terax anything": "询问 Terax 任意问题",
+    "Close tab": "关闭标签页", "Close pane": "关闭区域", "Ask Terax anything": "询问 Terax 任意问题",
     "Explain command output, fix errors, generate snippets, or run a task.": "解释命令输出、修复错误、生成片段或运行任务。",
     "Back to new tab menu": "返回新建标签页菜单", "Agent notifications": "代理通知", "example.ts": "例如：example.ts",
     "Auto Detect": "自动检测", "Unsaved changes": "未保存的更改", "Rename tab": "重命名标签页",

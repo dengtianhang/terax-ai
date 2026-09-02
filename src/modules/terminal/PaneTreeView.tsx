@@ -5,6 +5,9 @@ import {
 } from "@/components/ui/resizable";
 import type { SearchAddon } from "@xterm/addon-search";
 import { Fragment } from "react";
+import { useI18n } from "@/lib/i18n";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useTerminalDropStore } from "./lib/dropStore";
 import { firstLeafSlotId, type PaneNode } from "./lib/panes";
 import { TerminalPane, type TerminalPaneHandle } from "./TerminalPane";
@@ -22,13 +25,16 @@ type Props = {
   activeLeafId: number;
   blocks: boolean;
   onFocusLeaf: (leafId: number) => void;
+  onClosePane: (leafId: number) => void;
+  canClosePane: boolean;
   getBundle: (leafId: number) => LeafBundle;
 };
 
 export function PaneTreeView(props: Props) {
   const { node } = props;
+  const { tt } = useI18n();
   if (node.kind === "leaf") {
-    const { tabVisible, activeLeafId, blocks, onFocusLeaf, getBundle } = props;
+    const { tabVisible, activeLeafId, blocks, onFocusLeaf, onClosePane, canClosePane, getBundle } = props;
     const focused = node.id === activeLeafId;
     const b = getBundle(node.id);
     return (
@@ -42,7 +48,7 @@ export function PaneTreeView(props: Props) {
           if (!focused) onFocusLeaf(node.id);
         }}
         data-pane-leaf={node.id}
-        className="relative h-full w-full"
+        className="group relative h-full w-full"
       >
         <TerminalPane
           leafId={node.id}
@@ -56,6 +62,21 @@ export function PaneTreeView(props: Props) {
           onExit={b.onExit}
         />
         <DropOverlay leafId={node.id} />
+        {canClosePane && (
+        <button
+          type="button"
+          aria-label={tt("Close pane")}
+          title={tt("Close pane")}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClosePane(node.id);
+          }}
+          className="absolute right-2 top-2 z-30 flex size-5 items-center justify-center rounded-full border border-foreground/15 bg-background/65 text-muted-foreground opacity-0 shadow-sm backdrop-blur-md transition-all duration-150 hover:border-destructive/35 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/30"
+        >
+          <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={1.9} />
+        </button>
+        )}
         {focused && (
           <div
             aria-hidden="true"

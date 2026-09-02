@@ -1522,6 +1522,7 @@ export default function App() {
                         onCwd={handleTerminalCwd}
                         onExit={handleLeafExit}
                         onFocusLeaf={handleFocusLeaf}
+                        onClosePane={closePaneByLeaf}
                         registerEditorHandle={registerEditorHandle}
                         onEditorDirtyChange={handleEditorDirty}
                         onEditorCloseTab={disposeTab}
