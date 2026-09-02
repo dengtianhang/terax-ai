@@ -1,1 +1,1 @@
-TERAX.md
+docs/TERAX.md

@@ -1,7 +1,7 @@
 import { MarkdownCode } from "@/components/ai-elements/markdown-code";
 import { cn } from "@/lib/utils";
 import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { defaultRehypePlugins, Streamdown, type Components } from "streamdown";
@@ -24,10 +24,18 @@ type Props = {
   onSetView: (mode: "rendered" | "raw") => void;
 };
 type ImageDiagnostic = {
+  phase?: "asset" | "read" | "render";
   source: string;
   target: string | null;
   workspace: string;
   status: "loaded" | "failed";
+  mime?: string;
+  byteLength?: number;
+  urlType?: "original" | "data" | "asset";
+  currentSrc?: string;
+  url?: string;
+  naturalWidth?: number;
+  naturalHeight?: number;
   error?: string;
 };
 
@@ -54,6 +62,17 @@ function normalizeMarkdownUrl(url: string) {
   )
     return url;
   return `./${url}`;
+}
+function localImageAssetUrl(target: string) {
+  return convertFileSrc(target, "asset");
+}
+function imageDataUrl(bytes: number[], mime: string) {
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(index, index + chunkSize));
+  }
+  return `data:${mime};base64,${btoa(binary)}`;
 }
 const markdownRehypePlugins = [
   defaultRehypePlugins.raw,
@@ -85,60 +104,15 @@ function resolveMarkdownImagePath(source: string, markdownPath: string) {
     ? `${separator}${resolved.join(separator)}`
     : resolved.join(separator);
 }
-async function prepareMarkdownContent(
-  content: string,
-  markdownPath: string,
-  report: (diagnostic: ImageDiagnostic) => void,
-) {
-  const objectUrls: string[] = [];
-  let prepared = content.replace(
-    /((?:href)=["'])(?!https?:|data:|blob:|asset:|[/.#])([^"']+)(["'])/gi,
-    "$1./$2$3",
-  );
-  const matches = [
-    ...prepared.matchAll(/(<img\b[^>]*\bsrc=["'])([^"']+)(["'][^>]*>)/gi),
-  ];
-  for (const match of matches) {
-    const source = match[2];
-    if (/^(?:https?:|data:|blob:|asset:)/i.test(source)) continue;
-    const target = resolveMarkdownImagePath(source, markdownPath);
-    const mime = target
-      ? imageMimeTypes[target.split(".").pop()?.toLowerCase() ?? ""]
-      : undefined;
-    if (!target || !mime) continue;
-    try {
-      const workspace = currentWorkspaceEnv();
-      const bytes = await invoke<number[]>("fs_read_binary", {
-        path: target,
-        workspace,
-      });
-      const objectUrl = URL.createObjectURL(
-        new Blob([new Uint8Array(bytes)], { type: mime }),
-      );
-      objectUrls.push(objectUrl);
-      prepared = prepared.replace(
-        match[0],
-        `${match[1]}${objectUrl}${match[3]}`,
-      );
-      report({
-        source,
-        target,
-        workspace: JSON.stringify(workspace),
-        status: "loaded",
-      });
-    } catch (error) {
-      report({
-        source,
-        target,
-        workspace: JSON.stringify(currentWorkspaceEnv()),
-        status: "failed",
-        error: String(error),
-      });
-    }
-  }
-  return { content: prepared, objectUrls };
-}
-type MarkdownImageProps = ComponentProps<"img"> & {
+function prepareMarkdownContent(content: string) {
+  return Promise.resolve({
+    content: content.replace(
+      /((?:href)=["'])(?!https?:|data:|blob:|asset:|[/.#])([^"']+)(["'])/gi,
+      "$1./$2$3",
+    ),
+    objectUrls: [] as string[],
+  });
+}type MarkdownImageProps = ComponentProps<"img"> & {
   markdownPath: string;
   report: (diagnostic: ImageDiagnostic) => void;
 };
@@ -150,76 +124,99 @@ function MarkdownImage({
   ...props
 }: MarkdownImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  const target = src ? resolveMarkdownImagePath(src, markdownPath) : null;
+  const mime = target
+    ? imageMimeTypes[target.split(".").pop()?.toLowerCase() ?? ""]
+    : undefined;
+  const assetUrl = target ? localImageAssetUrl(target) : null;
+
   useEffect(() => {
     if (!src || /^(?:https?:|data:|blob:|asset:)/i.test(src)) {
       setImageUrl(src ?? null);
+      setFallbackUrl(null);
       return;
     }
-    let objectUrl: string | null = null;
-    let cancelled = false;
-    const target = resolveMarkdownImagePath(src, markdownPath);
-    const mime = target
-      ? imageMimeTypes[target.split(".").pop()?.toLowerCase() ?? ""]
-      : undefined;
     if (!target || !mime) {
+      setImageUrl(null);
       report({
+        phase: "read",
         source: String(src),
         target,
         workspace: JSON.stringify(currentWorkspaceEnv()),
         status: "failed",
+        mime,
         error: !target ? "无法解析图片路径" : "不支持的图片格式",
       });
-      setImageUrl(null);
       return;
     }
-    const workspace = currentWorkspaceEnv();
-    void invoke<number[]>("fs_read_binary", {
-      path: target,
-      workspace,
-    })
-      .then((bytes) => {
-        if (!cancelled) {
-          objectUrl = URL.createObjectURL(
-            new Blob([new Uint8Array(bytes)], { type: mime }),
-          );
-          setImageUrl(objectUrl);
-        }
-        report({
-          source: String(src),
-          target,
-          workspace: JSON.stringify(workspace),
-          status: "loaded",
-        });
-      })
-      .catch((error) => {
-        report({
-          source: String(src),
-          target,
-          workspace: JSON.stringify(workspace),
-          status: "failed",
-          error: String(error),
-        });
-        setImageUrl(null);
-      });
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [src, markdownPath, report]);
+    setFallbackUrl(null);
+    setImageUrl(assetUrl);
+    report({
+      phase: "asset",
+      source: String(src),
+      target,
+      workspace: JSON.stringify(currentWorkspaceEnv()),
+      status: "loaded",
+      mime,
+      urlType: "asset",
+      url: assetUrl ?? undefined,
+    });
+  }, [src, markdownPath, target, mime, assetUrl, report]);
+
   return (
     <img
       {...props}
-      src={imageUrl ?? undefined}
+      src={fallbackUrl ?? imageUrl ?? undefined}
       alt={alt ?? ""}
       loading="lazy"
+      onError={(event) => {
+        if (fallbackUrl || !target || !mime) return;
+        report({
+          source: String(src),
+          target,
+          workspace: JSON.stringify(currentWorkspaceEnv()),
+          status: "failed",
+          phase: "render",
+          mime,
+          currentSrc: event.currentTarget.currentSrc,
+          error: "asset image load failed; trying IPC data URL",
+        });
+        void invoke<number[]>("fs_read_binary", {
+          path: target,
+          workspace: currentWorkspaceEnv(),
+        })
+          .then((bytes) => imageDataUrl(bytes, mime))
+          .then((dataUrl) => setFallbackUrl(dataUrl))
+          .catch((error) => report({
+            source: String(src),
+            target,
+            workspace: JSON.stringify(currentWorkspaceEnv()),
+            status: "failed",
+            phase: "read",
+            mime,
+            error: String(error),
+          }));
+      }}
+      onLoad={(event) => {
+        report({
+          source: String(src),
+          target,
+          workspace: JSON.stringify(currentWorkspaceEnv()),
+          status: "loaded",
+          phase: "render",
+          currentSrc: event.currentTarget.currentSrc,
+          naturalWidth: event.currentTarget.naturalWidth,
+          naturalHeight: event.currentTarget.naturalHeight,
+        });
+      }}
     />
   );
-}
-
-export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
+}export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [renderedContent, setRenderedContent] = useState("");
   const [imageDiagnostics, setImageDiagnostics] = useState<ImageDiagnostic[]>([]);
+  const [imageDiagnosticsOpen, setImageDiagnosticsOpen] = useState(false);
   const reportImage = useCallback((diagnostic: ImageDiagnostic) => {
     setImageDiagnostics((current) => {
       const index = current.findIndex(
@@ -256,12 +253,14 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
     if (status.kind !== "ready") {
       setRenderedContent("");
       setImageDiagnostics([]);
+      setImageDiagnosticsOpen(false);
       return;
     }
     let cancelled = false;
     let objectUrls: string[] = [];
     setImageDiagnostics([]);
-    void prepareMarkdownContent(status.content, path, reportImage).then((result) => {
+    setImageDiagnosticsOpen(false);
+    void prepareMarkdownContent(status.content).then((result) => {
       if (cancelled) {
         result.objectUrls.forEach((url) => URL.revokeObjectURL(url));
         return;
@@ -274,6 +273,22 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [path, status, reportImage]);
+  useEffect(() => {
+    if (status.kind !== "ready") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.ctrlKey &&
+        event.shiftKey &&
+        event.altKey &&
+        event.code === "KeyD"
+      ) {
+        event.preventDefault();
+        setImageDiagnosticsOpen((value) => !value);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [status.kind]);
   return (
     <div
       className={cn(
@@ -282,11 +297,22 @@ export function MarkdownPreviewPane({ path, visible, onSetView }: Props) {
       )}
     >
       <MarkdownViewToggle mode="rendered" onChange={onSetView} />
-      {imageDiagnostics.length > 0 && (
+      {imageDiagnosticsOpen && imageDiagnostics.length > 0 && (
         <details className="absolute right-3 top-12 z-10 max-w-[min(620px,calc(100%-1.5rem))] rounded-md border border-border bg-background/95 p-2 text-[11px] shadow-md">
           <summary className="cursor-pointer text-foreground">
             Markdown image diagnostics ({imageDiagnostics.length})
           </summary>
+          <button
+            type="button"
+            className="mt-2 rounded border border-border px-2 py-1 text-foreground"
+            onClick={() =>
+              void navigator.clipboard.writeText(
+                JSON.stringify(imageDiagnostics, null, 2),
+              )
+            }
+          >
+            Copy diagnostics
+          </button>
           <div className="mt-2 max-h-56 space-y-2 overflow-auto">
             {imageDiagnostics.map((item, index) => (
               <pre key={`${item.source}-${index}`} className="whitespace-pre-wrap break-all text-muted-foreground">

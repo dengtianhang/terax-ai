@@ -1276,8 +1276,9 @@ export function useTabs(_initial?: Partial<TerminalTab>) {
       let newLeafId: number | null = null;
       setTabs((curr) =>
         curr.map((t) => {
-          if (t.id !== tabId || t.kind !== "terminal" || t.blocks) return t;
+          if (t.id !== tabId || t.kind !== "terminal") return t;
           if (leafIds(t.paneTree).length >= MAX_PANES_PER_TAB) return t;
+          if (t.blocks && t.paneTree.kind === "split" && t.paneTree.dir !== dir) return t;
           const splitId = nextIdRef.current++;
           const leafId = nextIdRef.current++;
           newLeafId = leafId;

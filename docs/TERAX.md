@@ -38,6 +38,18 @@ Verify before claiming done:
 - Frontend: `pnpm lint`, `pnpm check-types`, `pnpm test`
 - Rust: `cd src-tauri && cargo clippy --all-targets --locked -- -D warnings`, `cd src-tauri && cargo nextest run --locked` (or `cargo test --locked`)
 
+## 调试能力设计规范
+
+所有可视界面内容、预览器和交互模块，必须提供统一的调试入口：`Ctrl+Shift+Alt+D`。
+
+- 调试面板默认隐藏，仅在开发环境或用户主动触发快捷键后显示。
+- 调试信息只保存在内存，不写入项目文件，不采集对话内容或文件内容。
+- 每个模块至少报告输入来源、处理阶段、最终状态和错误信息；涉及资源加载时同时报告路径、MIME、实际 URL、尺寸或字节数。
+- 多阶段流程使用明确阶段名区分，例如 `asset`、`ipc`、`render`、`state`，便于仅凭截图定位故障边界。
+- 调试面板必须支持复制结构化 JSON，保证用户无法提供日志时仍可通过截图或复制结果排查问题。
+- 正式使用不展示调试面板；快捷键作为隐藏诊断能力保留，除非产品需求另行规定。
+- 新增模块或修改既有模块时，先补齐该模块调试数据，再实现或调整功能逻辑。
+
 A change to a core subsystem (terminal/shell spawn, workspace auth, git, fs, IPC or AI tool surface) needs a test that locks the invariant.
 
 ## Conventions

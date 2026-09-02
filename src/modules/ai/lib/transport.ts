@@ -12,7 +12,7 @@ const projectMemoryCache = new Map<string, MemoryCacheEntry>();
 
 async function readTeraxMd(workspaceRoot: string | null): Promise<string | null> {
   if (!workspaceRoot) return null;
-  const path = `${workspaceRoot.replace(/\/$/, "")}/TERAX.md`;
+  const path = `${workspaceRoot.replace(/\/$/, "")}/docs/TERAX.md`;
   const cached = projectMemoryCache.get(workspaceRoot);
   if (cached && Date.now() - cached.mtime < 30_000) return cached.content;
   try {

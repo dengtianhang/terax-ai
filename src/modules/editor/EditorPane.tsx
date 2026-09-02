@@ -17,7 +17,7 @@ import {
 import { Prec } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { vim } from "@replit/codemirror-vim";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
   forwardRef,
@@ -103,6 +103,14 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function imageDataUrl(bytes: number[], mime: string): string {
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(index, index + chunkSize));
+  }
+  return `data:${mime};base64,${btoa(binary)}`;
+}
 // memo: EditorStack passes identity-stable props, so background editors
 // skip re-rendering entirely when App re-renders (terminal events, tab churn).
 export const EditorPane = memo(
@@ -127,6 +135,13 @@ export const EditorPane = memo(
     const languageRef = useRef<string | null>(null);
     const [langId, setLangId] = useState<string | null>(null);
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+    const [mediaError, setMediaError] = useState<string | null>(null);
+    const [imageFallbackUrl, setImageFallbackUrl] = useState<string | null>(null);
+    const [mediaDiagnostics, setMediaDiagnostics] = useState<Record<string, unknown>[]>([]);
+    const [mediaDiagnosticsOpen, setMediaDiagnosticsOpen] = useState(false);
+    const reportMedia = useCallback((diagnostic: Record<string, unknown>) => {
+      setMediaDiagnostics((current) => [...current.slice(-7), diagnostic]);
+    }, []);
     const apiKeyRef = useRef<string | null>(null);
     useEffect(() => {
       if (doc.status !== "binary") {
@@ -143,23 +158,66 @@ export const EditorPane = memo(
       }[ext];
       if (!mime) {
         setMediaUrl(null);
+        setMediaError(null);
         return;
       }
       let objectUrl: string | null = null;
       let cancelled = false;
+      setMediaUrl(null);
+      setMediaError(null);
+      setImageFallbackUrl(null);
+      setMediaDiagnostics([]);
+      setMediaDiagnosticsOpen(false);
+      const assetUrl = mime.startsWith("image/") ? convertFileSrc(path, "asset") : null;
+      if (assetUrl) reportMedia({ phase: "asset", path, mime, url: assetUrl });
       void invoke<number[]>("fs_read_binary", {
         path,
         workspace: currentWorkspaceEnv(),
       }).then((bytes) => {
         if (cancelled) return;
-        objectUrl = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: mime }));
+        if (mime.startsWith("image/")) {
+          reportMedia({ phase: "ipc", status: "loaded", path, mime, byteLength: bytes.length });
+          return Promise.resolve(imageDataUrl(bytes, mime))
+            .then((dataUrl) => {
+              if (!cancelled) setMediaUrl(dataUrl);
+            });
+        }
+        objectUrl = URL.createObjectURL(new Blob([Uint8Array.from(bytes)], { type: mime }));
         setMediaUrl(objectUrl);
-      }).catch(() => setMediaUrl(null));
+      }).catch((error: unknown) => {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Failed to load media preview", { path, mime, message });
+        setMediaUrl(null);
+        if (mime.startsWith("image/") && assetUrl) {
+          setMediaUrl(assetUrl);
+          reportMedia({ phase: "ipc", status: "failed", path, mime, error: message });
+        } else {
+          setMediaError(message);
+        }
+      });
       return () => {
         cancelled = true;
         if (objectUrl) URL.revokeObjectURL(objectUrl);
       };
-    }, [doc.status, path]);
+    }, [doc.status, path, reportMedia]);
+
+    useEffect(() => {
+      if (doc.status !== "binary" && doc.status !== "toolarge") return;
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (
+          event.ctrlKey &&
+          event.shiftKey &&
+          event.altKey &&
+          event.code === "KeyD"
+        ) {
+          event.preventDefault();
+          setMediaDiagnosticsOpen((value) => !value);
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }, [doc.status]);
 
     useEffect(() => {
       let cancelled = false;
@@ -613,13 +671,64 @@ export const EditorPane = memo(
 
       if (isImage || isVideo || isAudio || isPdf) {
         const assetUrl = mediaUrl;
+        const mime = {
+          png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+          webp: "image/webp", svg: "image/svg+xml", ico: "image/x-icon",
+        }[ext] ?? "application/octet-stream";
         return (
           <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background p-4 overflow-auto">
+            {mediaDiagnosticsOpen && mediaDiagnostics.length > 0 && (
+              <details className="absolute right-3 top-3 z-10 max-w-[min(680px,calc(100%-1.5rem))] rounded-md border border-border bg-background/95 p-2 text-[11px] shadow-md">
+                <summary className="cursor-pointer text-foreground">Media diagnostics ({mediaDiagnostics.length})</summary>
+                <button
+                  type="button"
+                  className="mt-2 rounded border border-border px-2 py-1 text-foreground"
+                  onClick={() => void navigator.clipboard.writeText(JSON.stringify(mediaDiagnostics, null, 2))}
+                >
+                  Copy diagnostics
+                </button>
+                <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-all text-muted-foreground">
+                  {JSON.stringify(mediaDiagnostics, null, 2)}
+                </pre>
+              </details>
+            )}
             {isImage && (
               <img
-                src={assetUrl ?? undefined}
-                loading="lazy"
+                src={imageFallbackUrl ?? assetUrl ?? undefined}
                 decoding="async"
+                onLoad={(event) => {
+                  reportMedia({
+                    phase: "render",
+                    status: "loaded",
+                    path,
+                    mime,
+                    currentSrc: event.currentTarget.currentSrc,
+                    naturalWidth: event.currentTarget.naturalWidth,
+                    naturalHeight: event.currentTarget.naturalHeight,
+                  });
+                }}
+                onError={(event) => {
+                  if (imageFallbackUrl) return;
+                  reportMedia({
+                    phase: "render",
+                    status: "failed",
+                    path,
+                    mime,
+                    currentSrc: event.currentTarget.currentSrc,
+                    error: "asset image load failed; trying IPC data URL",
+                  });
+                  void invoke<number[]>("fs_read_binary", { path, workspace: currentWorkspaceEnv() })
+                    .then((bytes) => {
+                      reportMedia({ phase: "ipc", status: "loaded", path, mime, byteLength: bytes.length });
+                      return Promise.resolve(imageDataUrl(bytes, mime));
+                    })
+                    .then((dataUrl) => setImageFallbackUrl(dataUrl))
+                    .catch((error: unknown) => {
+                      const message = error instanceof Error ? error.message : String(error);
+                      reportMedia({ phase: "ipc", status: "failed", path, mime, error: message });
+                      setMediaError(message);
+                    });
+                }}
                 className="max-w-full max-h-full object-contain rounded-md border border-border shadow-sm"
                 style={{
                   backgroundImage:
@@ -628,6 +737,9 @@ export const EditorPane = memo(
                 }}
                 alt={path.split("/").pop()}
               />
+            )}
+            {isImage && !imageFallbackUrl && mediaError && (
+              <div className="text-xs text-destructive">图片预览失败：{mediaError}</div>
             )}
             {isVideo && (
               // biome-ignore lint/a11y/useMediaCaption: local media preview opens arbitrary files with no caption track

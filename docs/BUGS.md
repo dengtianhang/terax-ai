@@ -11,7 +11,8 @@
 ## Bug 清单
 
 - [x] `BUG-001` PowerShell `Tab` 接受灰色历史预测。
-- [x] `BUG-002` 设置弹框多屏定位与层级。`r`n- [x] `BUG-003` 设置页面自动打开调试窗口。
+- [x] `BUG-002` 设置弹框多屏定位与层级。
+- [x] `BUG-003` 设置页面自动打开调试窗口。
 - [x] `BUG-004` 新窗口打开后白屏。
 - [x] `BUG-005` 新窗口目录、窗口状态与显示器不正确。
 - [x] `BUG-006` 非最大化窗口重启后错误恢复为最大化。
@@ -108,3 +109,72 @@
 - 原因：各区域使用相同容器样式，缺少活动状态视觉反馈。
 - 修复：为当前区域增加完整圆角边框、内侧细描边和柔和阴影，切换区域时同步更新，不改变分区尺寸。
 - 验证：已点击不同区域，并使用 `Ctrl+[` / `Ctrl+]` 验证高亮跟随焦点切换。
+
+## BUG-011：Terax 普通终端未显示 Claude 颜色
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 现象：同一版本 Claude Code 在 CMD/Windows Terminal 中显示颜色，在 Terax 普通终端中显示黑白。
+- 原因：Terax 开发环境继承了 `NO_COLOR=1`，PTY 同步继承后，Claude Code 主动关闭 ANSI 颜色。
+- 修复：Terax PTY 清除 `NO_COLOR`，设置 `TERM_PROGRAM=Terax`，Windows 设置 `ConEmuANSI=ON`，保留 `TERM=xterm-256color` 和 `COLORTERM=truecolor`。
+- 验证：已增加 PTY 环境变量回归测试；需在 Terax 普通终端重新启动 Claude Code 验证颜色。
+
+## BUG-012：已分区区域缺少可视化关闭入口
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 现象：终端或区块分区后，只能依赖 `Ctrl+W` 关闭当前区域，界面没有明确的区域关闭入口。
+- 原因：分区区域未提供独立的关闭控件。
+- 修复：区域悬停时显示右上角关闭按钮，点击关闭当前区域；保留 `Ctrl+W` 快捷键。
+- 验证：需在终端和区块分区中分别验证按钮显示、关闭当前区域和自动重新布局。
+
+## BUG-013：关闭区域按钮缺少中文翻译
+
+- 状态：已修复，待用户验证
+- 优先级：P2
+- 现象：中文界面悬停关闭区域按钮时，提示仍显示 `Close pane`。
+- 原因：关闭按钮文案未接入国际化。
+- 修复：接入 `tt()`，中文显示“关闭区域”。
+- 验证：需切换中文界面，悬停按钮确认提示文字。
+
+## BUG-014：安装版无法正常预览本地图片
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 现象：在其他机器安装 Terax 后，访问本地图片无法正常展示。
+- 原因：`convertFileSrc()` 生成 `http://asset.localhost/...`，但 CSP 仅允许 `https://asset.localhost`，导致 asset 图片请求被 WebView2 拦截。
+- 修复：CSP 补充允许 `http://asset.localhost`；目录图片同时保留 IPC → `data:` URL 回退。视频、音频、PDF 保持原有 Blob URL。
+- 验证：需在安装版中打开 PNG、JPG、GIF、WEBP、SVG 等图片确认展示。
+
+## BUG-015：浅色主题下 Codex 输入区黑底黑字
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 现象：浅色主题运行 Codex TUI 时，输入区使用黑色背景，输入文字几乎不可见。
+- 原因：浅色主题把 ANSI `black` 映射为深黑色；Codex 输入区使用 ANSI 黑色背景，导致输入区变成黑底。
+- 修复：终端 PTY 注入 `TERM_PROGRAM_BACKGROUND=light` 与 `COLORFGBG=0;15`，让 Codex 原生识别浅色背景并绘制浅色输入区；最低对比度保持为 `4.5`。
+- 验证：浅色主题进入 Codex，确认输入区文字清晰；普通终端、深色主题无回归。
+
+## BUG-016：Claude/Codex CLI 中 `Ctrl+V` 无法粘贴
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 复现条件：Windows 终端运行 Claude Code 或 Codex CLI，使用 `Ctrl+V` 粘贴文本。
+- 实际现象：`Ctrl+V` 未触发剪贴板粘贴。
+- 期望行为：`Ctrl+V`、`Ctrl+Shift+V` 都能将剪贴板文本粘贴到终端。
+- 影响范围：Windows Terax 终端及终端分区。
+- 原因：仅注册 `Ctrl+Shift+V` 为粘贴快捷键，`Ctrl+V` 被当作终端输入发送。
+- 修复：Windows 下同时拦截 `Ctrl+V` 和 `Ctrl+Shift+V`，读取系统剪贴板后写入当前终端。
+- 验证：需在 Claude Code、Codex CLI、普通 PowerShell 中分别验证两种粘贴快捷键。
+
+## BUG-017：终端粘贴触发浏览器权限提示
+
+- 状态：已修复，待用户验证
+- 优先级：P1
+- 复现条件：Windows Terax 终端使用 `Ctrl+V` 或 `Ctrl+Shift+V` 粘贴。
+- 实际现象：弹出剪贴板“允许/阻止”权限提示。
+- 期望行为：终端粘贴直接执行，不弹出浏览器权限提示。
+- 影响范围：Windows Terax 终端及终端分区。
+- 原因：Windows 使用 `navigator.clipboard.readText()`，触发 WebView2 剪贴板权限机制。
+- 修复：Windows、macOS、Linux 统一优先使用 Tauri 原生 `clipboard-manager`，Web Clipboard 仅作为兜底。
+- 验证：需在 Windows Claude Code、Codex CLI、PowerShell 中验证两种粘贴快捷键无权限弹窗。

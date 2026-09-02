@@ -22,7 +22,7 @@ pnpm tauri dev
 
 Prereqs: Rust (stable), Node 20+, pnpm, plus your platform's [Tauri prerequisites](https://tauri.app/start/prerequisites/).
 
-For the architecture and how to contribute safely, see [TERAX.md](TERAX.md) and the [docs/ index](docs/README.md).
+For the architecture and how to contribute safely, see [TERAX.md](docs/TERAX.md) and the [docs/ index](docs/README.md).
 
 ## Where to discuss
 
@@ -254,7 +254,7 @@ A: If the change is still relevant and reasonably small, yes. If it's a large st
 ## Security issues
 
 Don't file them as public issues. See [SECURITY.md](SECURITY.md).
-
 ## License
 
 By contributing you agree your work is licensed under [Apache-2.0](LICENSE). No CLA required.
+
